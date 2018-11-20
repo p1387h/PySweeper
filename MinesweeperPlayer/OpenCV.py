@@ -3,6 +3,8 @@ from Window import *
 import cv2
 import numpy as np
 import imutils
+import os, sys
+import logging as l
 
 class OpenCV:
     """
@@ -11,14 +13,35 @@ class OpenCV:
     template matching.
     """
 
-    _template_paths = []
+    _template_paths = ["resources\\squares_unchecked\\square_dark.png"]
+    # [(template_information, (width, height)), ...]
     _templates = []
 
     def __init__(self):
-        pass
+        self.load_templates()
 
     def load_templates(self):
-        pass
+        """
+        Function for loading the templates from the resource folder.
+        """
+
+        self._templates.clear()
+        current_dir = os.getcwd()
+
+        l.info("Loading templates...")
+
+        # Check all paths and their corresponding templates.
+        for path in self._template_paths:
+            try:
+                complete_path = os.path.join(current_dir, path)
+                template = cv2.imread(complete_path, 0)
+                # [0] == width, [1] == height
+                shape = template.shape[::-1]
+                
+                l.debug(f"- Loaded template {shape} from: {complete_path}")
+                self._templates.append((template, shape))
+            except Exception as e:
+                l.error(f"Exception while loading {path}: {e}")
 
     def prepare_image(self, image):
         """

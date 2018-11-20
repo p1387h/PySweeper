@@ -13,12 +13,17 @@ class Game:
 
     _field = [[]]
     _current_state = FieldState.UNCHANGED
-    _open_cv = OpenCV()
+    _open_cv = None
 
     def __init__(self):
         pass
 
     def update(self, window):
+        # Force loading the logging configuration before any 
+        # instances are generated.
+        if self._open_cv is None:
+            self._open_cv = OpenCV()
+
         image = window.get_window_image()
         field_info = self._open_cv.get_field_information(image)
 

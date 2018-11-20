@@ -18,6 +18,8 @@ class GameManager:
         Fuction for starting the central gameplay loop.
         """
 
+        l.info("Starting the GameManager")
+
         if self._window.is_open():
             self._game.update(self._window)
         else:
