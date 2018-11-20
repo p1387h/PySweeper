@@ -5,6 +5,12 @@ import numpy as np
 import imutils
 
 class OpenCV:
+    """
+    Class used for extracting information from the window the 
+    Minesweeper game is currently running in by performing 
+    template matching.
+    """
+
     _template_paths = []
     _templates = []
 

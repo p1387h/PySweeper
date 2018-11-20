@@ -1,4 +1,9 @@
 class Square:
+    """
+    A square inside the Minesweeper game. Can either be checked (=clicked)
+    or unchecked (=no clicked). Different fields contain different values.
+    """
+
     center_coordinates = None
     value = None
     is_bomb = None

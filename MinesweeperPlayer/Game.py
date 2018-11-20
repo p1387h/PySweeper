@@ -4,6 +4,13 @@ from Window import *
 from OpenCV import *
 
 class Game:
+    """
+    Container class for all game relevant information. This class 
+    stores all informations regarding the current state of the 
+    game like the individual fields or changes that occurred (i.e.
+    after clicking a square).
+    """
+
     _field = None
     _current_state = FieldState.UNCHANGED
     _open_cv = OpenCV()
