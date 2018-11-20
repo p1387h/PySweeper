@@ -26,8 +26,10 @@ class Window:
         open = True
         # Test wheter the window is actually open.
         try:
+            self.update_window_handle()
             hwnd = self.get_window_handle()
             bounds = self.get_window_bounds()
+            pass
         except Exception:
             open = False
         return open
@@ -70,9 +72,9 @@ class Window:
         window in the PIL (Pillow) format.
         """
 
-        bounds = self._get_window_bounds(self._hwnd)
+        bounds = self.get_window_bounds()
 
-        focus_window(self._hwnd)
+        self.focus_window()
         # Time needed for the window to appear on top.
         time.sleep(.1)
     

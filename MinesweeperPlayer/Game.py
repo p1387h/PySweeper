@@ -11,7 +11,7 @@ class Game:
     after clicking a square).
     """
 
-    _field = None
+    _field = [[]]
     _current_state = FieldState.UNCHANGED
     _open_cv = OpenCV()
 
@@ -19,7 +19,8 @@ class Game:
         pass
 
     def update(self, window):
-        pass
+        image = window.get_window_image()
+        field_info = self._open_cv.get_field_information(image)
 
     def compare_fields(self):
         pass

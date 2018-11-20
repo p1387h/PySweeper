@@ -17,14 +17,29 @@ class OpenCV:
     def __init__(self):
         pass
 
-    def prepare_image(self, image):
+    def load_templates(self):
         pass
+
+    def prepare_image(self, image):
+        """
+        Function for converting a taken screenshot of the game's
+        window into a usable form.
+        """
+
+        # Convert PIL image to opencv one.
+        open_cv_image = np.array(image) 
+        # Convert RGB to BGR 
+        open_cv_image = open_cv_image[:, :, ::-1].copy() 
+        # Grayscale the image in order to work with the loaded template.
+        gray_image = cv2.cvtColor(open_cv_image, cv2.COLOR_BGR2GRAY)
+
+        return gray_image
 
     def is_finished(self, image):
         pass
 
     def get_field_information(self, image):
-        pass
+        gray_image = self.prepare_image(image)
 
     def extract_unchecked(self, image):
         pass

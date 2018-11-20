@@ -19,6 +19,6 @@ class GameManager:
         """
 
         if self._window.is_open():
-            pass
+            self._game.update(self._window)
         else:
             l.critical("The Minesweeper window must be opened in order for this program to work.")
