@@ -22,7 +22,16 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="FieldState.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Game.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Main.py" />
+    <Compile Include="Square.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Window.py">
       <SubType>Code</SubType>
     </Compile>

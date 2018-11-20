@@ -2,7 +2,7 @@ import win32gui, win32api, win32con
 import pyscreenshot as ImageGrab
 import time
 
-class Window():
+class Window:
     _window_name = "Minesweeper"
     _hwdn = None
 
