@@ -14,6 +14,9 @@ class OpenCV:
     template matching.
     """
 
+    _unchecked_window_name = "Unchecked Window Result"
+    _checked_window_name = "Checked Window Result"
+
     _template_paths = {
         "udark": "resources/squares_unchecked/square_dark.png",
         "umedium": "resources/squares_unchecked/square_medium.png",
@@ -34,6 +37,7 @@ class OpenCV:
 
     def __init__(self):
         self.load_templates()
+        self.create_result_windows()
 
     def load_templates(self):
         """
@@ -57,6 +61,14 @@ class OpenCV:
                 self._templates[key] = ((template, shape))
             except Exception as e:
                 l.error(f"Exception while loading {path}: {e}")
+
+    def create_result_windows():
+        """
+        Function for creating windows showing the results of the 
+        differente template matchings.
+        """
+
+        cv2.namedWindow(self._unchecked_window_name)
 
     def prepare_image(self, image):
         """
