@@ -36,7 +36,7 @@ class OpenCV:
 
     # {key: template, ...}
     _templates = {}
-    _threshold = 0.8
+    _threshold = 0.75
 
     def __init__(self):
         self.load_templates()
@@ -62,7 +62,7 @@ class OpenCV:
             except Exception as e:
                 l.error(f"Exception while loading {path}: {e}")
 
-    def prepare_image(self, image):
+    def prepare_image(self, image, use_canny = False):
         """
         Function for converting a taken screenshot of the game's
         window into a usable form.
@@ -74,6 +74,11 @@ class OpenCV:
         open_cv_image = open_cv_image[:, :, ::-1].copy() 
         # Grayscale the image in order to work with the loaded template.
         gray_image = cv2.cvtColor(open_cv_image, cv2.COLOR_BGR2GRAY)
+        
+        # Usage of the canny edge detection algorithm is advised when 
+        # matching numbers.
+        if use_canny:
+            gray_image = cv2.Canny(gray_image, 50, 200)
 
         return (open_cv_image, gray_image)
 
@@ -87,8 +92,8 @@ class OpenCV:
         """
         
         # Extract the needed information from the image and apply them.
-        unchecked_points, unchecked_ratio = self.extract_unchecked(image)
-        checked_points, checked_ratio = self.extract_checked(image)
+        unchecked_points, unchecked_ratio = list(self.extract_unchecked(image).values())[0]
+        results = self.extract_checked(image)
         points = unchecked_points
         ratio = max(unchecked_ratio, unchecked_ratio)
 
@@ -128,17 +133,41 @@ class OpenCV:
         as well as the scling ratio for them.
         """
 
-        key = "udark"
-        template = self._templates[key]
-
-        # Use the opencv template matching for finding the desired points.
-        open_cv_image, gray_image = self.prepare_image(image)
-        points, ratio = self.match_scaling_with_template(key, gray_image)
-
-        return points, ratio
+        return self.extract(image, ["udark"])
 
     def extract_checked(self, image):
-        return (0,0)
+        """
+        Function for extracting all points matching the checked template 
+        as well as the scling ratio for them.
+        """
+
+        checked_keys = [
+            "c0", "c1", "c2", "c3", "c4", "c5", "c6", "c7", "c8"
+        ]
+        return self.extract(image, checked_keys, use_canny = True)
+
+    def extract(self, image, keys, use_canny = False):
+        """
+        Function for extracting points by applying a template match on 
+        a provided image with a templated accessible via the provided 
+        key.
+        """
+
+        results = {}
+
+        for key in keys:
+            template = self._templates[key]
+
+            # Usage of the canny edge detection algorithm is advised when 
+            # matching numbers.
+            if use_canny:
+                template = cv2.Canny(template, 50, 200)
+
+            # Use the opencv template matching for finding the desired points.
+            open_cv_image, gray_image = self.prepare_image(image, use_canny)
+            results[key] = self.match_scaling_with_template(key, gray_image)
+
+        return results
 
     def match_scaling_with_template(self, template_key, gray_image):
         """
@@ -154,7 +183,7 @@ class OpenCV:
         template_height, template_width = template.shape[:2]
 
         # Gradually scale the image down.
-        for scale in np.linspace(0.1, 1.0, 30)[::-1]:
+        for scale in np.linspace(0.1, 1.0, 20)[::-1]:
             # Resize the image in order to match the template's size.
             # shape[1] is the width of the image
             resized_gray_image = imutils.resize(gray_image, int(gray_image.shape[1] * scale))
@@ -193,10 +222,20 @@ class OpenCV:
             point_bottom_x = point[0] + width
             point_bottom_y = point[1] + height
 
-            if top_left is None or (point[0] < top_left[0] and point[1] < top_left[1]):
+            if top_left is None:
                 top_left = point
-            if bottom_right is None or (point_bottom_x >= bottom_right[0] and point_bottom_y >= bottom_right[1]):
+            if bottom_right is None:
                 bottom_right = point_bottom_x, point_bottom_y
+
+            if point[0] < top_left[0]:
+                top_left = point[0], top_left[1]
+            if point[1] < top_left[1]:
+                top_left = top_left[0], point[1]
+            if point_bottom_x >= bottom_right[0]:
+                bottom_right = point_bottom_x, bottom_right[1]
+            if point_bottom_y >= bottom_right[1]:
+                bottom_right = bottom_right[0], point_bottom_y
+
 
         # Calculate the dimensions of the available space.
         total_width = bottom_right[0] - top_left[0]
@@ -209,12 +248,14 @@ class OpenCV:
 
         # Cube matrix.
         cubes = []
-        for row in range(0, cube_count_y):
-            cubes.append([None for column in range(0, cube_count_x)])
+        # +1 in both cases to make sure no out of bound exceptions are thrown.
+        for row in range(0, cube_count_y + 1):
+            cubes.append([None for column in range(0, cube_count_x + 1)])
 
         for point in points:
-            new_x = point[0] - top_left[0]
-            new_y = point[1] - top_left[1]
+            # max is used to prevent accessing indices from the last position (i.e. -1)
+            new_x = max(0, point[0] - top_left[0])
+            new_y = max(0, point[1] - top_left[1])
             index_x = new_x // int(cube_side_length)
             index_y = new_y // int(cube_side_length)
             cube = cubes[index_y][index_x]
@@ -243,8 +284,8 @@ class OpenCV:
             if center_x >= 0:
                 if top_y > 0:
                     neighbours.append(cubes[top_y][center_x])
-                if bottom_y > 0:
-                    neighbours.append(cubes[bottom_y][left_x])
+                if bottom_y < len(cubes):
+                    neighbours.append(cubes[bottom_y][center_x])
             # Right side of the target.
             if right_x < len(cubes[0]):
                 if top_y >= 0:
