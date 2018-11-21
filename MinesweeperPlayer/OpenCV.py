@@ -94,14 +94,7 @@ class OpenCV:
         from a provided image.
         """
 
-        # TODO: Replace with correct implementation.
-        key = "udark"
-        template = self._templates[key]
-        width, height = template.shape[::-1]
-
-        # Use the opencv template matching for finding the desired points.
-        open_cv_image, gray_image = self.prepare_image(image)
-        points, ratio = self.match_scaling_with_template(key, gray_image)
+        points, ratio, width, height = self.extract_unchecked(image)
         filtered_points = self.filter_points(points, width, height)
 
         # Adjust the results based on the ratio between the image and the template.
@@ -113,26 +106,38 @@ class OpenCV:
         cv2.imshow(self._unchecked_window_name, open_cv_image)
         cv2.waitKey()
 
-    def display_squares(self, open_cv_image, adjusted_squares):
+    def display_squares(self, open_cv_image, adjusted_squares, color = (0, 0, 255)):
         """
         Function for displaying squares in a single window.
         """
 
         for rect in adjusted_squares:
-            cv2.rectangle(open_cv_image, rect[0], rect[1], (0, 0, 255), 1)
+            cv2.rectangle(open_cv_image, rect[0], rect[1], color, 1)
 
-    def display_centers(self, open_cv_image, centers):
+    def display_centers(self, open_cv_image, centers, color = (255, 0, 0), radius = 2):
         """
         Function for displaying centers in a single window.
         """
 
         for center in centers:
-            radius = 2
             circle_center = (center[0] - radius // 2, center[1] - radius // 2)
-            cv2.circle(open_cv_image, circle_center, radius, (255, 0, 0), -1)
+            cv2.circle(open_cv_image, circle_center, radius, color, -1)
 
     def extract_unchecked(self, image):
-        pass
+        """
+        Function for extracting all points matching the unchecked template 
+        as well as the scling ratio for them.
+        """
+
+        key = "udark"
+        template = self._templates[key]
+        width, height = template.shape[::-1]
+
+        # Use the opencv template matching for finding the desired points.
+        open_cv_image, gray_image = self.prepare_image(image)
+        points, ratio = self.match_scaling_with_template(key, gray_image)
+
+        return points, ratio, width, height
 
     def extract_checked(self, image):
         pass
