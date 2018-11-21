@@ -173,7 +173,7 @@ class OpenCV:
         l.debug("Best matching: {} points, {} ratio".format(len(best_matching[0]), best_matching[1]))
         return best_matching
 
-    def filter_points(self, points, width, height, distance_tolerance = 5):
+    def filter_points(self, points, width, height, distance_tolerance = 6):
         """
         Fuction for filtering the points based on the distance to one another 
         such that only a single point for each square remains.
@@ -182,21 +182,91 @@ class OpenCV:
         l.info("Filering points...")
         l.debug("{} points found.".format(len(points)))
 
-        # Filter the points in such a way that only one point per square remains.
-        # Highly inefficient (O(N^2)), but it works.
-        filtered_points = []
+        # Find top left and bottom right coordinates.
+        top_left = None
+        bottom_right = None
+
         for point in points:
-            result = True
-            if len(filtered_points) > 0:
-                point_array = np.array(point)
-                for other_point in filtered_points:
-                    other_point_array = np.array(other_point)
-                    distance = np.linalg.norm(point_array - other_point_array)
-                    # Only a single point can remain per square since the distance would otherwise be too small.
-                    if distance < distance_tolerance:
-                        result = False
-            if result:
-                filtered_points.append(point)
+            point_bottom_x = point[0] + width
+            point_bottom_y = point[1] + height
+
+            if top_left is None or (point[0] < top_left[0] and point[1] < top_left[1]):
+                top_left = point
+            if bottom_right is None or (point_bottom_x >= bottom_right[0] and point_bottom_y >= bottom_right[1]):
+                bottom_right = point_bottom_x, point_bottom_y
+
+        # Calculate the dimensions of the available space.
+        total_width = bottom_right[0] - top_left[0]
+        total_height = bottom_right[1] - top_left[1]
+
+        # Generate cubes based on the desired distance between the points.
+        cube_side_length = distance_tolerance / 2
+        cube_count_x = int(total_width / cube_side_length)
+        cube_count_y = int(total_height / cube_side_length)
+
+        # Cube matrix.
+        cubes = []
+        for row in range(0, cube_count_y):
+            cubes.append([None for column in range(0, cube_count_x)])
+
+        for point in points:
+            new_x = point[0] - top_left[0]
+            new_y = point[1] - top_left[1]
+            index_x = new_x // int(cube_side_length)
+            index_y = new_y // int(cube_side_length)
+            cube = cubes[index_y][index_x]
+            
+            # Check the neighbouring cubes.
+            neighbours = [cube]
+            left_x = index_x - 1
+            center_x = index_x
+            right_x = index_x + 1
+            top_y = index_y - 1
+            center_y = index_y
+            bottom_y = index_y + 1
+
+            # Checks are needed since Python does not throw exceptions when 
+            # accessing indices like -1 etc. but instead reads elements from 
+            # the end of the list.
+            # Left side of the target.
+            if left_x >= 0:
+                if top_y >= 0:
+                    neighbours.append(cubes[top_y][left_x])
+                if center_y >= 0:
+                    neighbours.append(cubes[center_y][left_x])
+                if bottom_y < len(cubes):
+                    neighbours.append(cubes[bottom_y][left_x])
+            # Top and bottom of the target.
+            if center_x >= 0:
+                if top_y > 0:
+                    neighbours.append(cubes[top_y][center_x])
+                if bottom_y > 0:
+                    neighbours.append(cubes[bottom_y][left_x])
+            # Right side of the target.
+            if right_x < len(cubes[0]):
+                if top_y >= 0:
+                    neighbours.append(cubes[top_y][right_x])
+                if center_y >= 0:
+                    neighbours.append(cubes[center_y][right_x])
+                if bottom_y < len(cubes):
+                    neighbours.append(cubes[bottom_y][right_x])
+
+            # Neighbours and the target must be checked in order to determine 
+            # whether the point can be used.
+            point_is_acceptable = True
+            for other_point in neighbours:
+                if other_point is not None:
+                    point_is_acceptable = False
+                    break
+            if point_is_acceptable:
+                cubes[index_y][index_x] = point
+
+        # Extract all points from the cubes.
+        filtered_points = []
+        for row in cubes:
+            for stored_point in row:
+                if stored_point is not None:
+                    filtered_points.append(stored_point)
 
         l.debug("{} points remain after filtering.".format(len(filtered_points)))
         return filtered_points
