@@ -108,23 +108,28 @@ class OpenCV:
         adjusted_squares, centers = self.adjust_values_based_on_ratio(filtered_points, ratio, width, height)
 
         # Display the results in a window to verify them.
-        self.display_field_results(open_cv_image, adjusted_squares, centers)
+        self.display_squares(open_cv_image, adjusted_squares)
+        self.display_centers(open_cv_image, centers)
+        cv2.imshow(self._unchecked_window_name, open_cv_image)
+        cv2.waitKey()
 
-    def display_field_results(self, open_cv_image, adjusted_squares, centers):
+    def display_squares(self, open_cv_image, adjusted_squares):
         """
-        Function for displaying the generated results in a single window.
+        Function for displaying squares in a single window.
         """
 
         for rect in adjusted_squares:
             cv2.rectangle(open_cv_image, rect[0], rect[1], (0, 0, 255), 1)
+
+    def display_centers(self, open_cv_image, centers):
+        """
+        Function for displaying centers in a single window.
+        """
+
         for center in centers:
             radius = 2
             circle_center = (center[0] - radius // 2, center[1] - radius // 2)
             cv2.circle(open_cv_image, circle_center, radius, (255, 0, 0), -1)
-
-        # Display the results in a single window.
-        cv2.imshow(self._unchecked_window_name, open_cv_image)
-        cv2.waitKey()
 
     def extract_unchecked(self, image):
         pass
@@ -168,7 +173,7 @@ class OpenCV:
         l.debug("Best matching: {} points, {} ratio".format(len(best_matching[0]), best_matching[1]))
         return best_matching
 
-    def filter_points(self, points, width, height):
+    def filter_points(self, points, width, height, distance_tolerance = 5):
         """
         Fuction for filtering the points based on the distance to one another 
         such that only a single point for each square remains.
@@ -188,7 +193,7 @@ class OpenCV:
                     other_point_array = np.array(other_point)
                     distance = np.linalg.norm(point_array - other_point_array)
                     # Only a single point can remain per square since the distance would otherwise be too small.
-                    if distance < min(width, height):
+                    if distance < distance_tolerance:
                         result = False
             if result:
                 filtered_points.append(point)
@@ -205,12 +210,12 @@ class OpenCV:
         down must be scaled up in order to properly match it again.
         """
         
-        adjusted_points = map(lambda point: (int(point[0] * ratio), int(point[1] * ratio)), points)
+        adjusted_points = list(map(lambda point: (int(point[0] * ratio), int(point[1] * ratio)), points))
         adjusted_width = int(width * ratio)
         adjusted_height = int(height * ratio)
         # Top left and bottom right are saved in order to display a rectangle.
-        adjusted_squares = map(lambda point: (point, (point[0] + adjusted_width, point[1] + adjusted_height)), adjusted_points)
+        adjusted_squares = list(map(lambda point: (point, (point[0] + adjusted_width, point[1] + adjusted_height)), adjusted_points))
 
         centers = list(map(lambda point: (point[0] + adjusted_width // 2, point[1] + adjusted_height // 2), adjusted_points))
 
-        return list(adjusted_squares), centers
+        return adjusted_squares, centers
