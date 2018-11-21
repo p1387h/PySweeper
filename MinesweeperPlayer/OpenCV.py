@@ -31,6 +31,8 @@ class OpenCV:
         "c7": "resources/squares_checked/square_7.png",
         "c8": "resources/squares_checked/square_8.png",
     }
+    _template_width = 18
+    _template_height = 18
 
     # {key: template, ...}
     _templates = {}
@@ -60,16 +62,6 @@ class OpenCV:
             except Exception as e:
                 l.error(f"Exception while loading {path}: {e}")
 
-    def update_result_windows(self, unchecked_result_image, checked_result_image):
-        """
-        Function for updating the windows showing the results of 
-        the different template matchings.
-        """
-
-        cv2.imshow(self._unchecked_window_name, unchecked_result_image)
-        cv2.imshow(self._checked_window_name, checked_result_image)
-        cv2.waitKey()
-
     def prepare_image(self, image):
         """
         Function for converting a taken screenshot of the game's
@@ -93,14 +85,21 @@ class OpenCV:
         Function for extracting the game information (values, bombs, checked / unchecked)
         from a provided image.
         """
+        
+        # Extract the needed information from the image and apply them.
+        unchecked_points, unchecked_ratio = self.extract_unchecked(image)
+        checked_points, checked_ratio = self.extract_checked(image)
+        points = unchecked_points
+        ratio = max(unchecked_ratio, unchecked_ratio)
 
-        points, ratio, width, height = self.extract_unchecked(image)
-        filtered_points = self.filter_points(points, width, height)
+        # Filter all points based on their coordinates such that no points overlap.
+        filtered_points = self.filter_points(points, self._template_width, self._template_height)
 
         # Adjust the results based on the ratio between the image and the template.
-        adjusted_squares, centers = self.adjust_values_based_on_ratio(filtered_points, ratio, width, height)
+        adjusted_squares, centers = self.adjust_template_values_based_on_ratio(filtered_points, ratio)
 
         # Display the results in a window to verify them.
+        open_cv_image, gray_image = self.prepare_image(image)
         self.display_squares(open_cv_image, adjusted_squares)
         self.display_centers(open_cv_image, centers)
         cv2.imshow(self._unchecked_window_name, open_cv_image)
@@ -131,16 +130,15 @@ class OpenCV:
 
         key = "udark"
         template = self._templates[key]
-        width, height = template.shape[::-1]
 
         # Use the opencv template matching for finding the desired points.
         open_cv_image, gray_image = self.prepare_image(image)
         points, ratio = self.match_scaling_with_template(key, gray_image)
 
-        return points, ratio, width, height
+        return points, ratio
 
     def extract_checked(self, image):
-        pass
+        return (0,0)
 
     def match_scaling_with_template(self, template_key, gray_image):
         """
@@ -276,7 +274,7 @@ class OpenCV:
         l.debug("{} points remain after filtering.".format(len(filtered_points)))
         return filtered_points
 
-    def adjust_values_based_on_ratio(self, points, ratio, width, height):
+    def adjust_template_values_based_on_ratio(self, points, ratio):
         """
         Function for adjusting the existing template's values based on a 
         returned ratio. The points and sizes received from the template 
@@ -286,8 +284,8 @@ class OpenCV:
         """
         
         adjusted_points = list(map(lambda point: (int(point[0] * ratio), int(point[1] * ratio)), points))
-        adjusted_width = int(width * ratio)
-        adjusted_height = int(height * ratio)
+        adjusted_width = int(self._template_width * ratio)
+        adjusted_height = int(self._template_height * ratio)
         # Top left and bottom right are saved in order to display a rectangle.
         adjusted_squares = list(map(lambda point: (point, (point[0] + adjusted_width, point[1] + adjusted_height)), adjusted_points))
 
