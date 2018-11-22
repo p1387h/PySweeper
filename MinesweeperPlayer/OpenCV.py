@@ -31,6 +31,7 @@ class OpenCV:
         "c7": "resources/squares_checked/square_7.png",
         "c8": "resources/squares_checked/square_8.png",
     }
+    _used_unchecked_template_key = "udark"
 
     # {key: template, ...}
     _templates = {}
@@ -40,6 +41,11 @@ class OpenCV:
     _unchecked_threshold = 0.725
     _checked_empty_threshold = 0.85
     _checked_number_threshold = 0.69
+
+    # Coordinates / dimension of the game field that can be used for 
+    # template matching.
+    _coord_top_left = None
+    _coord_bottom_right = None
 
     def __init__(self):
         self.load_templates()
@@ -65,11 +71,42 @@ class OpenCV:
             except Exception as e:
                 l.error(f"Exception while loading {path}: {e}")
 
-    def prepare_image(self, image, use_canny = False, canny_params = (50, 200)):
+    def update_image_coordinates(self, points, additional_width = 0, additional_height = 0):
+        # Find top left and bottom right coordinates.
+        top_left = None
+        bottom_right = None
+
+        for point in points:
+            point_bottom_x = point[0] + additional_width
+            point_bottom_y = point[1] + additional_height
+
+            if top_left is None:
+                top_left = point
+            if bottom_right is None:
+                bottom_right = point_bottom_x, point_bottom_y
+
+            if point[0] < top_left[0]:
+                top_left = point[0], top_left[1]
+            if point[1] < top_left[1]:
+                top_left = top_left[0], point[1]
+            if point_bottom_x >= bottom_right[0]:
+                bottom_right = point_bottom_x, bottom_right[1]
+            if point_bottom_y >= bottom_right[1]:
+                bottom_right = bottom_right[0], point_bottom_y
+
+        self._coord_top_left = top_left
+        self._coord_bottom_right = bottom_right
+
+    def prepare_image(self, image, use_canny = False, canny_params = (50, 200), use_cropped_image = False):
         """
         Function for converting a taken screenshot of the game's
         window into a usable form.
         """
+
+        # Crop the image if necessary. Can be used for correctly match 
+        # numbers on the screen.
+        if use_cropped_image:
+            image = image.crop((*self._coord_top_left, *self._coord_bottom_right))
 
         # Convert PIL image to opencv one.
         open_cv_image = np.array(image) 
@@ -97,6 +134,11 @@ class OpenCV:
         # Extract the needed information from the image and apply them.
         unchecked_ratio, unchecked_points, unchecked_template = list(self.extract_unchecked(image).values())[0]
         
+        # Update is performed using all unchecked points in order to 
+        # address all possible squares.
+        top_corner_points = self.convert_to_corners(unchecked_points, self._used_unchecked_template_key)
+        self.update_image_coordinates(top_corner_points, *map(lambda x: int(x * unchecked_ratio), unchecked_template.shape[::-1]))
+
         centers = unchecked_points
         ratio = max(unchecked_ratio, unchecked_ratio)
         width, height = unchecked_template.shape[::-1]
@@ -134,7 +176,7 @@ class OpenCV:
         as well as the scling ratio for them.
         """
 
-        return self.extract(image, ["udark"], self._unchecked_threshold)
+        return self.extract(image, [self._used_unchecked_template_key], self._unchecked_threshold)
 
     def extract_checked(self, image):
         """
@@ -146,12 +188,12 @@ class OpenCV:
             "c0", "c1", "c2", "c3", "c4", "c5", "c6", "c7", "c8"
         ]
         result_empty = self.extract(image, checked_keys[:1], self._checked_empty_threshold)
-        result_numbers = self.extract(image, checked_keys[1:], self._checked_number_threshold, use_canny = True)
+        result_numbers = self.extract(image, checked_keys[1:], self._checked_number_threshold, use_canny = True, use_cropped_image = True)
         result = {**result_empty, **result_numbers}
 
         return result
 
-    def extract(self, image, keys, threshold, adjust_points_to_match_image = True, use_canny = False, canny_params = (50, 200)):
+    def extract(self, image, keys, threshold, adjust_points_to_match_image = True, use_canny = False, canny_params = (50, 200), use_cropped_image = False):
         """
         Function for extracting points by applying a template match on 
         a provided image with a templated accessible via the provided 
@@ -166,7 +208,7 @@ class OpenCV:
             l.debug("Extracting: {}".format(key))
 
             # Use the opencv template matching for finding the desired points.
-            open_cv_image, gray_image = self.prepare_image(image, use_canny, canny_params)
+            open_cv_image, gray_image = self.prepare_image(image, use_canny = use_canny, canny_params = canny_params, use_cropped_image = use_cropped_image)
             points, ratio = self.match_scaling_with_template(key, gray_image, threshold, use_canny = use_canny, canny_params = canny_params)
 
             # When adjusting the points, only the points themselves are of interest 
@@ -276,32 +318,9 @@ class OpenCV:
         l.info("Filering points...")
         l.debug("{} points found.".format(len(points)))
 
-        # Find top left and bottom right coordinates.
-        top_left = None
-        bottom_right = None
-
-        for point in points:
-            point_bottom_x = point[0] + width
-            point_bottom_y = point[1] + height
-
-            if top_left is None:
-                top_left = point
-            if bottom_right is None:
-                bottom_right = point_bottom_x, point_bottom_y
-
-            if point[0] < top_left[0]:
-                top_left = point[0], top_left[1]
-            if point[1] < top_left[1]:
-                top_left = top_left[0], point[1]
-            if point_bottom_x >= bottom_right[0]:
-                bottom_right = point_bottom_x, bottom_right[1]
-            if point_bottom_y >= bottom_right[1]:
-                bottom_right = bottom_right[0], point_bottom_y
-
-
         # Calculate the dimensions of the available space.
-        total_width = bottom_right[0] - top_left[0]
-        total_height = bottom_right[1] - top_left[1]
+        total_width = self._coord_bottom_right[0] - self._coord_top_left[0]
+        total_height = self._coord_bottom_right[1] - self._coord_top_left[1]
 
         # Generate cubes based on the desired distance between the points.
         cube_side_length = distance_tolerance / 2
@@ -316,8 +335,8 @@ class OpenCV:
 
         for point in points:
             # max is used to prevent accessing indices from the last position (i.e. -1)
-            new_x = max(0, point[0] - top_left[0])
-            new_y = max(0, point[1] - top_left[1])
+            new_x = max(0, point[0] - self._coord_top_left[0])
+            new_y = max(0, point[1] - self._coord_top_left[1])
             index_x = new_x // int(cube_side_length)
             index_y = new_y // int(cube_side_length)
             cube = cubes[index_y][index_x]
