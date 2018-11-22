@@ -36,7 +36,12 @@ class OpenCV:
 
     # {key: template, ...}
     _templates = {}
-    _threshold = 0.75
+
+    # Thresholds for the different kinds of template matchings that 
+    # are performed by this class.
+    _unchecked_threshold = 0.725
+    _checked_empty_threshold = 0.85
+    _checked_number_threshold = 0.815
 
     def __init__(self):
         self.load_templates()
@@ -62,7 +67,7 @@ class OpenCV:
             except Exception as e:
                 l.error(f"Exception while loading {path}: {e}")
 
-    def prepare_image(self, image, use_canny = False):
+    def prepare_image(self, image):
         """
         Function for converting a taken screenshot of the game's
         window into a usable form.
@@ -75,11 +80,6 @@ class OpenCV:
         # Grayscale the image in order to work with the loaded template.
         gray_image = cv2.cvtColor(open_cv_image, cv2.COLOR_BGR2GRAY)
         
-        # Usage of the canny edge detection algorithm is advised when 
-        # matching numbers.
-        if use_canny:
-            gray_image = cv2.Canny(gray_image, 50, 200)
-
         return (open_cv_image, gray_image)
 
     def is_finished(self, image):
@@ -133,7 +133,7 @@ class OpenCV:
         as well as the scling ratio for them.
         """
 
-        return self.extract(image, ["udark"])
+        return self.extract(image, ["udark"], self._unchecked_threshold)
 
     def extract_checked(self, image):
         """
@@ -144,9 +144,13 @@ class OpenCV:
         checked_keys = [
             "c0", "c1", "c2", "c3", "c4", "c5", "c6", "c7", "c8"
         ]
-        return self.extract(image, checked_keys, use_canny = True)
+        result_empty = self.extract(image, checked_keys[:1], self._checked_empty_threshold)
+        result_numbers = self.extract(image, checked_keys[1:], self._checked_number_threshold)
+        result = {**result_empty, **result_numbers}
 
-    def extract(self, image, keys, use_canny = False):
+        return result
+
+    def extract(self, image, keys, threshold):
         """
         Function for extracting points by applying a template match on 
         a provided image with a templated accessible via the provided 
@@ -158,18 +162,15 @@ class OpenCV:
         for key in keys:
             template = self._templates[key]
 
-            # Usage of the canny edge detection algorithm is advised when 
-            # matching numbers.
-            if use_canny:
-                template = cv2.Canny(template, 50, 200)
+            l.debug("Extracting: {}".format(key))
 
             # Use the opencv template matching for finding the desired points.
-            open_cv_image, gray_image = self.prepare_image(image, use_canny)
-            results[key] = self.match_scaling_with_template(key, gray_image)
+            open_cv_image, gray_image = self.prepare_image(image)
+            results[key] = self.match_scaling_with_template(key, gray_image, threshold)
 
         return results
 
-    def match_scaling_with_template(self, template_key, gray_image):
+    def match_scaling_with_template(self, template_key, gray_image, threshold):
         """
         Function for matching the image with the template accessible by 
         the provided template_key. This function scales the image in 
@@ -195,7 +196,7 @@ class OpenCV:
 
             # Template matching.
             result = cv2.matchTemplate(resized_gray_image, template, cv2.TM_CCOEFF_NORMED)
-            locations = np.where(result >= self._threshold)
+            locations = np.where(result >= threshold)
             points = list(zip(*locations[::-1]))
 
             # All of the squares must be matched (Error prone!).
