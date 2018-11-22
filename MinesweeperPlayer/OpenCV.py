@@ -189,8 +189,15 @@ class OpenCV:
         ]
         result_empty = self.extract(image, checked_keys[:1], self._checked_empty_threshold)
         result_numbers = self.extract(image, checked_keys[1:], self._checked_number_threshold, use_canny = True, use_cropped_image = True)
-        result = {**result_empty, **result_numbers}
 
+        # Adjust the points since a cropped image is used. The coordinates 
+        # received previously do not match the uncropped image.
+        # item[0] == key
+        # item[1] == value == tuple
+        mapping_function = lambda item: (item[0], (item[1][0], self.adjust_cropped_points(item[1][1]), item[1][2]))
+        adjusted_result_numbers = list(map(mapping_function, result_numbers.items()))
+
+        result = {**result_empty, **dict(adjusted_result_numbers)}
         return result
 
     def extract(self, image, keys, threshold, adjust_points_to_match_image = True, use_canny = False, canny_params = (50, 200), use_cropped_image = False):
@@ -308,6 +315,16 @@ class OpenCV:
 
         return adjusted_points, adjusted_width, adjusted_height
 
+    def adjust_cropped_points(self, points):
+        """
+        Function for applying the offset created by template matching 
+        a cropped image. Since the positions returned by this do not 
+        correctly match the uncropped image, the corrdinates must be 
+        adjusted.
+        """
+
+        adjusted_points = list(map(lambda point: (point[0] + self._coord_top_left[0], point[1] + self._coord_top_left[1]), points))
+        return adjusted_points
 
     def filter_points(self, points, width, height, distance_tolerance = 6):
         """
