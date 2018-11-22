@@ -31,8 +31,6 @@ class OpenCV:
         "c7": "resources/squares_checked/square_7.png",
         "c8": "resources/squares_checked/square_8.png",
     }
-    _template_width = 18
-    _template_height = 18
 
     # {key: template, ...}
     _templates = {}
@@ -92,21 +90,19 @@ class OpenCV:
         """
         
         # Extract the needed information from the image and apply them.
-        unchecked_points, unchecked_ratio = list(self.extract_unchecked(image).values())[0]
-        results = self.extract_checked(image)
-        points = unchecked_points
+        unchecked_ratio, unchecked_points, unchecked_template = list(self.extract_unchecked(image).values())[0]
+        
+        centers = unchecked_points
         ratio = max(unchecked_ratio, unchecked_ratio)
+        width, height = unchecked_template.shape[::-1]
 
         # Filter all points based on their coordinates such that no points overlap.
-        filtered_points = self.filter_points(points, self._template_width, self._template_height)
-
-        # Adjust the results based on the ratio between the image and the template.
-        adjusted_squares, centers = self.adjust_template_values_based_on_ratio(filtered_points, ratio)
+        tolerance = int(unchecked_ratio * max(*unchecked_template.shape[::-1]))
+        filtered_points = self.filter_points(unchecked_points, width, height, distance_tolerance = tolerance)
 
         # Display the results in a window to verify them.
         open_cv_image, gray_image = self.prepare_image(image)
-        self.display_squares(open_cv_image, adjusted_squares)
-        self.display_centers(open_cv_image, centers)
+        self.display_centers(open_cv_image, filtered_points)
         cv2.imshow(self._unchecked_window_name, open_cv_image)
         cv2.waitKey()
 
@@ -150,7 +146,7 @@ class OpenCV:
 
         return result
 
-    def extract(self, image, keys, threshold):
+    def extract(self, image, keys, threshold, adjust_points_to_match_image = True):
         """
         Function for extracting points by applying a template match on 
         a provided image with a templated accessible via the provided 
@@ -166,7 +162,14 @@ class OpenCV:
 
             # Use the opencv template matching for finding the desired points.
             open_cv_image, gray_image = self.prepare_image(image)
-            results[key] = self.match_scaling_with_template(key, gray_image, threshold)
+            points, ratio = self.match_scaling_with_template(key, gray_image, threshold)
+
+            # When adjusting the points, only the points themselves are of interest 
+            # since the ratio is also returned (template shape * ratio = used shape).
+            if adjust_points_to_match_image:
+                points, width, height = self.adjust_template_values_based_on_ratio(points, ratio, key)
+
+            results[key] = ratio, points, template
 
         return results
 
@@ -234,6 +237,24 @@ class OpenCV:
         corners = list(map(lambda point: (point[0] - template_width // 2, point[1] - template_height // 2), points))
 
         return corners
+
+    def adjust_template_values_based_on_ratio(self, points, ratio, template_key):
+        """
+        Function for adjusting the existing template's values based on a 
+        returned ratio. The points and sizes received from the template 
+        matching must be changed to match the base image dimensions. A 
+        template matching a region of the image while the latter is scaled 
+        down must be scaled up in order to properly match it again.
+        """
+
+        template = self._templates[template_key]
+        template_width, template_height = template.shape[::-1]
+        
+        adjusted_points = list(map(lambda point: (int(point[0] * ratio), int(point[1] * ratio)), points))
+        adjusted_width = int(template_width * ratio)
+        adjusted_height = int(template_height * ratio)
+
+        return adjusted_points, adjusted_width, adjusted_height
 
 
     def filter_points(self, points, width, height, distance_tolerance = 6):
@@ -345,22 +366,3 @@ class OpenCV:
 
         l.debug("{} points remain after filtering.".format(len(filtered_points)))
         return filtered_points
-
-    def adjust_template_values_based_on_ratio(self, points, ratio):
-        """
-        Function for adjusting the existing template's values based on a 
-        returned ratio. The points and sizes received from the template 
-        matching must be changed to match the base image dimensions. A 
-        template matching a region of the image while the latter is scaled 
-        down must be scaled up in order to properly match it again.
-        """
-        
-        adjusted_points = list(map(lambda point: (int(point[0] * ratio), int(point[1] * ratio)), points))
-        adjusted_width = int(self._template_width * ratio)
-        adjusted_height = int(self._template_height * ratio)
-        # Top left and bottom right are saved in order to display a rectangle.
-        adjusted_squares = list(map(lambda point: (point, (point[0] + adjusted_width, point[1] + adjusted_height)), adjusted_points))
-
-        centers = list(map(lambda point: (point[0] + adjusted_width // 2, point[1] + adjusted_height // 2), adjusted_points))
-
-        return adjusted_squares, centers
