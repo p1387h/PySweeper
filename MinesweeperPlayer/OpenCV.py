@@ -170,13 +170,11 @@ class OpenCV:
 
         return results
 
-    def match_scaling_with_template(self, template_key, gray_image, threshold):
+    def match_scaling_with_template(self, template_key, gray_image, threshold, convert_to_center = True):
         """
         Function for matching the image with the template accessible by 
         the provided template_key. This function scales the image in 
         order to match different window sizes with the same template.
-        returns:
-        ([points], ratio)
         """
 
         best_matching = None
@@ -204,7 +202,39 @@ class OpenCV:
                 best_matching = points, ratio
 
         l.debug("Best matching: {} points, {} ratio".format(len(best_matching[0]), best_matching[1]))
+
+        # Top left corner can be converted to the center of the template.
+        if convert_to_center:
+            l.debug("Converting corners to centers...")
+            centers = self.convert_to_centers(best_matching[0], template_key)
+            best_matching = centers, best_matching[1]
+
         return best_matching
+
+    def convert_to_centers(self, points, template_key):
+        """
+        Function for converting a collection of points (top left) to 
+        centers using a template.
+        """
+
+        template = self._templates[template_key]
+        template_width, template_height = template.shape[::-1]
+        centers = list(map(lambda point: (point[0] + template_width // 2, point[1] + template_height // 2), points))
+
+        return centers
+
+    def convert_to_corners(self, points, template_key):
+        """
+        Function for converting a collection of points (centers) to 
+        top left corner points using a template.
+        """
+
+        template = self._templates[template_key]
+        template_width, template_height = template.shape[::-1]
+        corners = list(map(lambda point: (point[0] - template_width // 2, point[1] - template_height // 2), points))
+
+        return corners
+
 
     def filter_points(self, points, width, height, distance_tolerance = 6):
         """
