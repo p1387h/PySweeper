@@ -38,9 +38,20 @@ class OpenCV:
 
     # Thresholds for the different kinds of template matchings that 
     # are performed by this class.
-    _unchecked_threshold = 0.725
-    _checked_empty_threshold = 0.85
-    _checked_number_threshold = 0.69
+    _thresholds = {
+        "udark": 0.725,
+        "umedium": 0.725,
+        "ulight": 0.725,
+        "c0": 0.85,
+        "c1": 0.68,
+        "c2": 0.69,
+        "c3": 0.69,
+        "c4": 0.69,
+        "c5": 0.69,
+        "c6": 0.69,
+        "c7": 0.69,
+        "c8": 0.69,
+    }
 
     # Coordinates / dimension of the game field that can be used for 
     # template matching.
@@ -175,8 +186,8 @@ class OpenCV:
         Function for extracting all points matching the unchecked template 
         as well as the scling ratio for them.
         """
-
-        return self.extract(image, [self._used_unchecked_template_key], self._unchecked_threshold)
+        result = self.extract(image, [self._used_unchecked_template_key])
+        return result;
 
     def extract_checked(self, image):
         """
@@ -187,8 +198,8 @@ class OpenCV:
         checked_keys = [
             "c0", "c1", "c2", "c3", "c4", "c5", "c6", "c7", "c8"
         ]
-        result_empty = self.extract(image, checked_keys[:1], self._checked_empty_threshold)
-        result_numbers = self.extract(image, checked_keys[1:], self._checked_number_threshold, use_canny = True, use_cropped_image = True)
+        result_empty = self.extract(image, checked_keys[:1])
+        result_numbers = self.extract(image, checked_keys[1:], use_canny = True, use_cropped_image = True)
 
         # Adjust the points since a cropped image is used. The coordinates 
         # received previously do not match the uncropped image.
@@ -200,7 +211,7 @@ class OpenCV:
         result = {**result_empty, **dict(adjusted_result_numbers)}
         return result
 
-    def extract(self, image, keys, threshold, adjust_points_to_match_image = True, use_canny = False, canny_params = (50, 200), use_cropped_image = False):
+    def extract(self, image, keys, adjust_points_to_match_image = True, use_canny = False, canny_params = (50, 200), use_cropped_image = False):
         """
         Function for extracting points by applying a template match on 
         a provided image with a templated accessible via the provided 
@@ -216,7 +227,7 @@ class OpenCV:
 
             # Use the opencv template matching for finding the desired points.
             open_cv_image, gray_image = self.prepare_image(image, use_canny = use_canny, canny_params = canny_params, use_cropped_image = use_cropped_image)
-            points, ratio = self.match_scaling_with_template(key, gray_image, threshold, use_canny = use_canny, canny_params = canny_params)
+            points, ratio = self.match_scaling_with_template(key, gray_image, use_canny = use_canny, canny_params = canny_params)
 
             # When adjusting the points, only the points themselves are of interest 
             # since the ratio is also returned (template shape * ratio = used shape).
@@ -227,13 +238,14 @@ class OpenCV:
 
         return results
 
-    def match_scaling_with_template(self, template_key, gray_image, threshold, convert_to_center = True, use_canny = False, canny_params = (50, 200)):
+    def match_scaling_with_template(self, template_key, gray_image, convert_to_center = True, use_canny = False, canny_params = (50, 200)):
         """
         Function for matching the image with the template accessible by 
         the provided template_key. This function scales the image in 
         order to match different window sizes with the same template.
         """
 
+        threshold = self._thresholds[template_key]
         best_matching = None
         template = self._templates[template_key]
         template_height, template_width = template.shape[:2]
@@ -340,9 +352,9 @@ class OpenCV:
         total_height = self._coord_bottom_right[1] - self._coord_top_left[1]
 
         # Generate cubes based on the desired distance between the points.
-        cube_side_length = distance_tolerance / 2
-        cube_count_x = int(total_width / cube_side_length)
-        cube_count_y = int(total_height / cube_side_length)
+        cube_side_length = int(distance_tolerance / 2)
+        cube_count_x = total_width // cube_side_length
+        cube_count_y = total_height // cube_side_length
 
         # Cube matrix.
         cubes = []
@@ -354,8 +366,8 @@ class OpenCV:
             # max is used to prevent accessing indices from the last position (i.e. -1)
             new_x = max(0, point[0] - self._coord_top_left[0])
             new_y = max(0, point[1] - self._coord_top_left[1])
-            index_x = new_x // int(cube_side_length)
-            index_y = new_y // int(cube_side_length)
+            index_x = new_x // cube_side_length
+            index_y = new_y // cube_side_length
             cube = cubes[index_y][index_x]
             
             # Check the neighbouring cubes.
