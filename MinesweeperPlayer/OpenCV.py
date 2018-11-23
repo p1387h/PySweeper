@@ -1,4 +1,5 @@
 from Window import *
+from Square import *
 from pathlib import Path
 
 import cv2
@@ -6,6 +7,13 @@ import numpy as np
 import imutils
 import os
 import logging as l
+
+_unchecked_keys = [
+    "udark", "umedium", "ulight"
+]
+_checked_keys = [
+    "c0", "c1", "c2", "c3", "c4", "c5", "c6", "c7", "c8"
+]
 
 class OpenCV:
     """
@@ -18,20 +26,20 @@ class OpenCV:
     _checked_window_name = "Checked Window Result"
 
     _template_paths = {
-        "udark": "resources/squares_unchecked/square_dark.png",
-        "umedium": "resources/squares_unchecked/square_medium.png",
-        "ulight": "resources/squares_unchecked/square_light.png",
-        "c0": "resources/squares_checked/square_empty.png",
-        "c1": "resources/squares_checked/square_1.png",
-        "c2": "resources/squares_checked/square_2.png",
-        "c3": "resources/squares_checked/square_3.png",
-        "c4": "resources/squares_checked/square_4.png",
-        "c5": "resources/squares_checked/square_5.png",
-        "c6": "resources/squares_checked/square_6.png",
-        "c7": "resources/squares_checked/square_7.png",
-        "c8": "resources/squares_checked/square_8.png",
+        _unchecked_keys[0]: "resources/squares_unchecked/square_dark.png",
+        _unchecked_keys[1]: "resources/squares_unchecked/square_medium.png",
+        _unchecked_keys[2]: "resources/squares_unchecked/square_light.png",
+        _checked_keys[0]: "resources/squares_checked/square_empty.png",
+        _checked_keys[1]: "resources/squares_checked/square_1.png",
+        _checked_keys[2]: "resources/squares_checked/square_2.png",
+        _checked_keys[3]: "resources/squares_checked/square_3.png",
+        _checked_keys[4]: "resources/squares_checked/square_4.png",
+        _checked_keys[5]: "resources/squares_checked/square_5.png",
+        _checked_keys[6]: "resources/squares_checked/square_6.png",
+        _checked_keys[7]: "resources/squares_checked/square_7.png",
+        _checked_keys[8]: "resources/squares_checked/square_8.png",
     }
-    _used_unchecked_template_key = "udark"
+    _used_unchecked_template_key = _unchecked_keys[0]
 
     # {key: template, ...}
     _templates = {}
@@ -39,18 +47,18 @@ class OpenCV:
     # Thresholds for the different kinds of template matchings that 
     # are performed by this class.
     _thresholds = {
-        "udark": 0.725,
-        "umedium": 0.725,
-        "ulight": 0.725,
-        "c0": 0.85,
-        "c1": 0.68,
-        "c2": 0.6,
-        "c3": 0.69,
-        "c4": 0.69,
-        "c5": 0.69,
-        "c6": 0.69,
-        "c7": 0.69,
-        "c8": 0.69,
+        _unchecked_keys[0]: 0.725,
+        _unchecked_keys[1]: 0.725,
+        _unchecked_keys[2]: 0.725,
+        _checked_keys[0]: 0.85,
+        _checked_keys[1]: 0.68,
+        _checked_keys[2]: 0.6,
+        _checked_keys[3]: 0.69,
+        _checked_keys[4]: 0.69,
+        _checked_keys[5]: 0.69,
+        _checked_keys[6]: 0.69,
+        _checked_keys[7]: 0.69,
+        _checked_keys[8]: 0.69,
     }
 
     # Coordinates / dimension of the game field that can be used for 
@@ -222,11 +230,8 @@ class OpenCV:
         as well as the scling ratio for them.
         """
 
-        checked_keys = [
-            "c0", "c1", "c2", "c3", "c4", "c5", "c6", "c7", "c8"
-        ]
-        result_empty = self.extract(image, checked_keys[:1])
-        result_numbers = self.extract(image, checked_keys[1:], use_canny = True, use_cropped_image = True)
+        result_empty = self.extract(image, _checked_keys[:1])
+        result_numbers = self.extract(image, _checked_keys[1:], use_canny = True, use_cropped_image = True)
 
         # Adjust the points since a cropped image is used. The coordinates 
         # received previously do not match the uncropped image.
