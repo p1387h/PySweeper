@@ -7,6 +7,7 @@ import numpy as np
 import imutils
 import os
 import logging as l
+import operator
 
 _unchecked_keys = [
     "udark", "umedium", "ulight"
@@ -59,6 +60,19 @@ class OpenCV:
         _checked_keys[6]: 0.69,
         _checked_keys[7]: 0.69,
         _checked_keys[8]: 0.69,
+    }
+
+    # Mapped values for the different squares.
+    _mapped_values = {
+        _checked_keys[0]: 0,
+        _checked_keys[1]: 1,
+        _checked_keys[2]: 2,
+        _checked_keys[3]: 3,
+        _checked_keys[4]: 4,
+        _checked_keys[5]: 5,
+        _checked_keys[6]: 6,
+        _checked_keys[7]: 7,
+        _checked_keys[8]: 8,
     }
 
     # Coordinates / dimension of the game field that can be used for 
@@ -185,19 +199,99 @@ class OpenCV:
 
         # Filter all points based on their coordinates such that no points 
         # of the same type overlap.
+        filtered_results = {}
         for key in results.keys():
             ratio, points, template = results[key]
             tolerance = int(ratio * max(*template.shape[::-1]))
             width, height = template.shape[::-1]
-            filtered = self.filter_points(points, width, height, distance_tolerance = tolerance)
+            filtered_points = self.filter_points(points, width, height, distance_tolerance = tolerance)
+            filtered_results[key] = ratio, filtered_points, template
 
-            if len(filtered) > 0:
-                # Display the results in a window to verify them.
-                open_cv_image, gray_image = self.prepare_image(image)
-                self.display_centers(open_cv_image, filtered)
-                cv2.imshow("Result " + key, open_cv_image)
+        # Create a matrix of squares that represents the game field.
+        square_tuples = self.transform_into_square_tuples(filtered_results)
+        square_matrix = self.transform_into_square_matrix(square_tuples)
+
+        # Crude display of the result matrix.
+        for row in square_matrix:
+            for column in row:
+                if column.is_unchecked:
+                    print("  ", end = "")
+                else:
+                    print("{} ".format(column.value), end = "")
+            print("")
 
         cv2.waitKey()
+
+    def transform_into_square_tuples(self, template_matching_results):
+        """
+        Function for transforming all points into Squares. Does NOT remove 
+        the ratio and template information since they are needed later on.
+        """
+
+        square_tuples = []
+
+        for key in template_matching_results.keys():
+            ratio, points, template = template_matching_results[key]
+            for point in points:
+                square = Square(point)
+
+                if key in _unchecked_keys:
+                    square.is_unchecked = True
+                    square.value = None
+                elif key in _checked_keys:
+                    square.is_unchecked = False
+                    square.value = self._mapped_values[key]
+                square_tuples.append((ratio, template, square))
+
+        return square_tuples
+
+    def transform_into_square_matrix(self, square_tuples):
+        """
+        Function for creating a matrix (list of lists) that represents the 
+        game's field (accessible by: [row][column]).
+        """
+
+        # Sorted by rows (Y).
+        sorted_square_tuples = sorted(square_tuples, key = lambda square_tuple: square_tuple[2].center_coordinates[1])
+
+        # Y values can differ. Therefore they must be normalized for each row 
+        # such that only a single value exists for each one.
+        template_heights = map(lambda tuple: tuple[1].shape[0] * tuple[0], square_tuples)
+        # The distance at which rows are combined.
+        combine_distance = int(max(*template_heights) / 2)
+        adjusted_squares = []
+        current_row_y = None
+        current_row_index = 0
+
+        for square_tuple in sorted_square_tuples:
+            ratio, template, square = square_tuple
+
+            # First entry to be adjusted.
+            if current_row_y is None:
+                current_row_y = square.center_coordinates[1]
+                adjusted_squares.append([square])
+            else:
+                square_y = square.center_coordinates[1]
+                y_difference = square_y - current_row_y
+
+                # Same row (works the same if the square_y is smaller than the 
+                # current_row_y).
+                if y_difference < combine_distance:
+                    square.center_coordinates = square.center_coordinates[0], current_row_y
+                    adjusted_squares[current_row_index].append(square)
+                # Next row below the current one.
+                else:
+                    current_row_index += 1
+                    current_row_y = square.center_coordinates[1]
+                    adjusted_squares.append([square])
+
+        # Sort by columns (X)
+        # Note:
+        # The X values still differ from row to row as only the Y ones are normalized!
+        for row in adjusted_squares:
+            row.sort(key = lambda square: square.center_coordinates[0])
+
+        return adjusted_squares
 
     def display_squares(self, open_cv_image, adjusted_squares, color = (0, 0, 255)):
         """
@@ -387,8 +481,7 @@ class OpenCV:
         such that only a single point for each square remains.
         """
 
-        l.info("Filering points...")
-        l.debug("{} points found.".format(len(points)))
+        l.debug("Filering {} points...".format(len(points)))
 
         # Calculate the dimensions of the available space.
         total_width = self._coord_bottom_right[0] - self._coord_top_left[0]
