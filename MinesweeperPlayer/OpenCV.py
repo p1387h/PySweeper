@@ -44,7 +44,7 @@ class OpenCV:
         "ulight": 0.725,
         "c0": 0.85,
         "c1": 0.68,
-        "c2": 0.69,
+        "c2": 0.6,
         "c3": 0.69,
         "c4": 0.69,
         "c5": 0.69,
@@ -125,6 +125,8 @@ class OpenCV:
             if point_bottom_y >= bottom_right[1]:
                 bottom_right = bottom_right[0], point_bottom_y
 
+        l.info("Updating field dimensions to {}, {}".format(top_left, bottom_right))
+
         self._coord_top_left = top_left
         self._coord_bottom_right = bottom_right
 
@@ -167,21 +169,26 @@ class OpenCV:
         if self._coord_top_left is None or self._coord_bottom_right is None:
             self.init_image_coordinates(image)
 
-        # Extract the needed information from the image and apply them.
-        unchecked_ratio, unchecked_points, unchecked_template = list(self.extract_unchecked(image).values())[0]
+        # Results of the different template matchings must be combined in order to 
+        # properly display them all.
+        results_unchecked = self.extract_unchecked(image)
+        results_checked = self.extract_checked(image)
+        results = {**results_unchecked, **results_checked}
 
-        centers = unchecked_points
-        ratio = max(unchecked_ratio, unchecked_ratio)
-        width, height = unchecked_template.shape[::-1]
+        # Filter all points based on their coordinates such that no points 
+        # of the same type overlap.
+        for key in results.keys():
+            ratio, points, template = results[key]
+            tolerance = int(ratio * max(*template.shape[::-1]))
+            width, height = template.shape[::-1]
+            filtered = self.filter_points(points, width, height, distance_tolerance = tolerance)
 
-        # Filter all points based on their coordinates such that no points overlap.
-        tolerance = int(unchecked_ratio * max(*unchecked_template.shape[::-1]))
-        filtered_points = self.filter_points(unchecked_points, width, height, distance_tolerance = tolerance)
+            if len(filtered) > 0:
+                # Display the results in a window to verify them.
+                open_cv_image, gray_image = self.prepare_image(image)
+                self.display_centers(open_cv_image, filtered)
+                cv2.imshow("Result " + key, open_cv_image)
 
-        # Display the results in a window to verify them.
-        open_cv_image, gray_image = self.prepare_image(image)
-        self.display_centers(open_cv_image, filtered_points)
-        cv2.imshow(self._unchecked_window_name, open_cv_image)
         cv2.waitKey()
 
     def display_squares(self, open_cv_image, adjusted_squares, color = (0, 0, 255)):
