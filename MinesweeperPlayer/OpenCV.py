@@ -82,7 +82,27 @@ class OpenCV:
             except Exception as e:
                 l.error(f"Exception while loading {path}: {e}")
 
+    def init_image_coordinates(self, image):
+        """
+        Function for initializing the top left and bottom right coordinates of the 
+        game's field. This uses the unchecked squares in order to determine the 
+        dimensions of the field.
+        """
+
+         # Extract the needed information from the image and apply them.
+        ratio, points, template = list(self.extract_unchecked(image).values())[0]
+        
+        # Update is performed using all unchecked points in order to 
+        # address all possible squares.
+        top_corner_points = self.convert_to_corners(points, self._used_unchecked_template_key)
+        self.update_image_coordinates(top_corner_points, *map(lambda x: int(x * ratio), template.shape[::-1]))
+
     def update_image_coordinates(self, points, additional_width = 0, additional_height = 0):
+        """
+        Function for updating the top left and bottom right coordinates of the 
+        game's field.
+        """
+
         # Find top left and bottom right coordinates.
         top_left = None
         bottom_right = None
@@ -142,13 +162,13 @@ class OpenCV:
         from a provided image.
         """
         
+        # The coordinates need to be set once in order for the checked 
+        # template matching to properly work.
+        if self._coord_top_left is None or self._coord_bottom_right is None:
+            self.init_image_coordinates(image)
+
         # Extract the needed information from the image and apply them.
         unchecked_ratio, unchecked_points, unchecked_template = list(self.extract_unchecked(image).values())[0]
-        
-        # Update is performed using all unchecked points in order to 
-        # address all possible squares.
-        top_corner_points = self.convert_to_corners(unchecked_points, self._used_unchecked_template_key)
-        self.update_image_coordinates(top_corner_points, *map(lambda x: int(x * unchecked_ratio), unchecked_template.shape[::-1]))
 
         centers = unchecked_points
         ratio = max(unchecked_ratio, unchecked_ratio)
@@ -250,30 +270,41 @@ class OpenCV:
         template = self._templates[template_key]
         template_height, template_width = template.shape[:2]
 
-        # Gradually scale the image down.
-        for scale in np.linspace(0.1, 1.0, 20)[::-1]:
-            # Resize the image in order to match the template's size.
-            # shape[1] is the width of the image
-            resized_gray_image = imutils.resize(gray_image, int(gray_image.shape[1] * scale))
-            ratio = gray_image.shape[1] / float(resized_gray_image.shape[1])
+        ## Gradually scale the image down.
+        #for scale in np.linspace(0.1, 1.0, 20)[::-1]:
+        #    # Resize the image in order to match the template's size.
+        #    # shape[1] is the width of the image
+        #    resized_gray_image = imutils.resize(gray_image, int(gray_image.shape[1] * scale))
+        #    ratio = gray_image.shape[1] / float(resized_gray_image.shape[1])
 
-            # Image must not be smaller than the template.
-            if resized_gray_image.shape[0] < template_height or resized_gray_image.shape[1] < template_width:
-                break
+        #    # Image must not be smaller than the template.
+        #    if resized_gray_image.shape[0] < template_height or resized_gray_image.shape[1] < template_width:
+        #        break
 
-            # Usage of the canny edge detection algorithm is advised when 
-            # matching numbers.
-            if use_canny:
-                template = cv2.Canny(template, *canny_params)
+        #    # Usage of the canny edge detection algorithm is advised when 
+        #    # matching numbers.
+        #    if use_canny:
+        #        template = cv2.Canny(template, *canny_params)
 
-            # Template matching.
-            result = cv2.matchTemplate(resized_gray_image, template, cv2.TM_CCOEFF_NORMED)
-            locations = np.where(result >= threshold)
-            points = list(zip(*locations[::-1]))
+        #    # Template matching.
+        #    result = cv2.matchTemplate(resized_gray_image, template, cv2.TM_CCOEFF_NORMED)
+        #    locations = np.where(result >= threshold)
+        #    points = list(zip(*locations[::-1]))
 
-            # All of the squares must be matched (Error prone!).
-            if best_matching is None or len(best_matching[0]) < len(points):
-                best_matching = points, ratio
+        #    # All of the squares must be matched (Error prone!).
+        #    if best_matching is None or len(best_matching[0]) < len(points):
+        #        best_matching = points, ratio
+
+        # Usage of the canny edge detection algorithm is advised when 
+        # matching numbers.
+        if use_canny:
+            template = cv2.Canny(template, *canny_params)
+
+        # Template matching.
+        result = cv2.matchTemplate(gray_image, template, cv2.TM_CCOEFF_NORMED)
+        locations = np.where(result >= threshold)
+        points = list(zip(*locations[::-1]))
+        best_matching = points, 1.0
 
         l.debug("Best matching: {} points, {} ratio".format(len(best_matching[0]), best_matching[1]))
 
