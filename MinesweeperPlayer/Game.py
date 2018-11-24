@@ -11,9 +11,11 @@ class Game:
     after clicking a square).
     """
 
-    _field = [[]]
+    _prev_field_info = None
     _current_state = FieldState.UNCHANGED
     _open_cv = None
+
+    current_field_info = None
 
     def __init__(self):
         pass
@@ -24,14 +26,50 @@ class Game:
         if self._open_cv is None:
             self._open_cv = OpenCV()
 
+        # Update the field state using OpenCV.
         image = window.get_window_image()
-        field_info = self._open_cv.get_field_information(image)
+        new_field_info = self._open_cv.get_field_information(image)
+        self._current_state = self.compare_and_update_field_info(new_field_info)
 
-    def compare_fields(self):
-        pass
+    def compare_and_update_field_info(self, field_info):
+        resulting_field_state = FieldState.UNCHANGED
+
+        # First update cycle.
+        if self._prev_field_info is None:
+            self._prev_field_info = field_info
+            self.current_field_info = field_info
+            resulting_field_state = FieldState.CHANGED
+
+            l.info("Field state initialized.")
+        # Each square must be compared in order to determine whether 
+        # a change occurred. Checking the field representing the checked 
+        # property is enough since the values of the squares do not change.
+        else:
+            # Row and column count match the entire game.
+            for row_index in range(0, len(self._prev_field_info)):
+                for column_index in range(0, len(self._prev_field_info[row_index])):
+                    old_square = self._prev_field_info[row_index][column_index]
+                    new_square = field_info[row_index][column_index]
+
+                    if old_square.is_unchecked and not new_square.is_unchecked:
+                        l.debug("Field state differs at [{}][{}].".format(row_index, column_index))
+
+                        # Update the field state such that the new one can be 
+                        # retrieved.
+                        self._prev_field_info = self.current_field_info
+                        self.current_field_info = field_info
+                        resulting_field_state = FieldState.CHANGED
+                        break
+                if resulting_field_state is FieldState.CHANGED:
+                    break
+
+        return resulting_field_state
 
     def is_finished(self):
         return self._current_state is FieldState.FINISHED
 
     def has_changed(self):
         return self._current_state is FieldState.CHANGED
+
+    def reset_field_state(self):
+        self._current_state = FieldState.UNCHANGED

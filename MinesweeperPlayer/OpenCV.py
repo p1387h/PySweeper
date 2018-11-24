@@ -211,16 +211,7 @@ class OpenCV:
         square_tuples = self.transform_into_square_tuples(filtered_results)
         square_matrix = self.transform_into_square_matrix(square_tuples)
 
-        # Crude display of the result matrix.
-        for row in square_matrix:
-            for column in row:
-                if column.is_unchecked:
-                    print("  ", end = "")
-                else:
-                    print("{} ".format(column.value), end = "")
-            print("")
-
-        cv2.waitKey()
+        return square_matrix
 
     def transform_into_square_tuples(self, template_matching_results):
         """
