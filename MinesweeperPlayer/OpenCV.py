@@ -7,7 +7,6 @@ import numpy as np
 import imutils
 import os
 import logging as l
-import operator
 
 _unchecked_keys = [
     "udark", "umedium", "ulight"
@@ -75,7 +74,7 @@ class OpenCV:
         _checked_keys[8]: 8,
     }
 
-    # Coordinates / dimension of the game field that can be used for 
+    # Coordinates / dimensions of the game field that can be used for 
     # template matching.
     _coord_top_left = None
     _coord_bottom_right = None
@@ -468,11 +467,11 @@ class OpenCV:
 
     def filter_points(self, points, width, height, distance_tolerance = 6):
         """
-        Fuction for filtering the points based on the distance to one another 
+        Function for filtering the points based on the distance to one another 
         such that only a single point for each square remains.
         """
 
-        l.debug("Filering {} points...".format(len(points)))
+        l.debug("Filtering {} points...".format(len(points)))
 
         # Calculate the dimensions of the available space.
         total_width = self._coord_bottom_right[0] - self._coord_top_left[0]
