@@ -1,5 +1,6 @@
 from Window import *
 from Game import *
+from DecisionMaker import *
 
 import logging as l
 
@@ -12,6 +13,7 @@ class GameManager:
 
     _window = Window()
     _game = Game()
+    _decision_maker = DecisionMaker()
 
     def run(self):
         """
@@ -28,6 +30,10 @@ class GameManager:
                 self._game.update(self._window)
 
                 if self._game.has_changed():
+                    field = self._game.current_field_info
+
                     self._game.reset_field_state()
+                    next_square = self._decision_maker.decide_next_square(field)
+                    pass
             else:
                 l.critical("The Minesweeper window must be opened in order for this program to work.")
