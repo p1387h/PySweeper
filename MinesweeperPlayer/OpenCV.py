@@ -22,9 +22,14 @@ class OpenCV:
     template matching.
     """
 
+    # Properties used for displaying the OpenCV results in a separate window.
+    _show_template_matching_results = True
     _unchecked_window_name = "Unchecked Window Result"
     _checked_window_name = "Checked Window Result"
+    _unchecked_image = None
+    _checked_image = None
 
+    # Paths to the templates that are being used for template matching.
     _template_paths = {
         _unchecked_keys[0]: "resources/squares_unchecked/square_dark.png",
         _unchecked_keys[1]: "resources/squares_unchecked/square_medium.png",
@@ -185,6 +190,8 @@ class OpenCV:
         from a provided image.
         """
         
+        l.debug("Extracting fielf information...")
+
         # The coordinates need to be set once in order for the checked 
         # template matching to properly work.
         if self._coord_top_left is None or self._coord_bottom_right is None:
@@ -200,6 +207,8 @@ class OpenCV:
         # of the same type overlap.
         filtered_results = {}
         for key in results.keys():
+            l.debug("Filtering for key '{}'".format(key))
+
             ratio, points, template = results[key]
             tolerance = int(ratio * max(*template.shape[::-1]))
             width, height = template.shape[::-1]
@@ -209,6 +218,34 @@ class OpenCV:
         # Create a matrix of squares that represents the game field.
         square_tuples = self.transform_into_square_tuples(filtered_results)
         square_matrix = self.transform_into_square_matrix(square_tuples)
+
+        # Crude display of the result.
+        l.debug("Extraction results: {} rows with {} columns".format(len(square_matrix), list(map(lambda x: len(x), square_matrix))))
+        for row in square_matrix:
+            line = ""
+            for column in row:
+                if column.is_unchecked:
+                    line += " "
+                else:
+                    line += str(column.value)
+            l.debug(line)
+
+        # OpenCV window for template matching results.
+        if self._show_template_matching_results:
+            self._unchecked_image = self.prepare_image(image)[0]
+            self._checked_image = self.prepare_image(image)[0]
+
+            for key, (ratio, points, template) in filtered_results.items():
+                if key in _unchecked_keys:
+                    self.display_centers(self._unchecked_image, points)
+                elif key in _checked_keys:
+                    self.display_centers(self._checked_image, points)
+
+            cv2.imshow(self._unchecked_window_name, self._unchecked_image)
+            cv2.imshow(self._checked_window_name, self._checked_image)
+            cv2.moveWindow(self._unchecked_window_name, 10, 10)
+            cv2.moveWindow(self._checked_window_name, 650, 10)
+            cv2.waitKey(1)
 
         return square_matrix
 
@@ -305,6 +342,7 @@ class OpenCV:
         Function for extracting all points matching the unchecked template 
         as well as the scling ratio for them.
         """
+
         result = self.extract(image, [self._used_unchecked_template_key])
         return result;
 

@@ -38,6 +38,9 @@
     <Compile Include="Square.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="SquareChange.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Window.py">
       <SubType>Code</SubType>
     </Compile>

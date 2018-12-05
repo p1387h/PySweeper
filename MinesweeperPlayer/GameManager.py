@@ -22,18 +22,12 @@ class GameManager:
 
         while not self._game.is_finished():
             if self._window.is_open():
+                # TODO: Remove
+                input("Waiting for input...")
+
                 self._game.update(self._window)
 
                 if self._game.has_changed():
                     self._game.reset_field_state()
-
-                    # Crude display of the field state.
-                    for row in self._game.current_field_info:
-                        for column in row:
-                            if column.is_unchecked:
-                                print("  ", end = "")
-                            else:
-                                print("{} ".format(column.value), end = "")
-                        print("")
             else:
                 l.critical("The Minesweeper window must be opened in order for this program to work.")
