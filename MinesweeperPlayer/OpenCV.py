@@ -556,7 +556,7 @@ class OpenCV:
                     neighbours.append(cubes[bottom_y][left_x])
             # Top and bottom of the target.
             if center_x >= 0:
-                if top_y > 0:
+                if top_y >= 0:
                     neighbours.append(cubes[top_y][center_x])
                 if bottom_y < len(cubes):
                     neighbours.append(cubes[bottom_y][center_x])
