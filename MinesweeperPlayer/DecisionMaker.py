@@ -1,4 +1,5 @@
 from Square import *
+from SquareWrapper import *
 from queue import Queue
 
 import random
@@ -34,7 +35,7 @@ class DecisionMaker:
             next_square = self.pick_best_valued_square(field)
             self._is_field_updated = False
         else:
-            self.update_field()
+            self.update_field(field)
             self._is_field_updated = True
             next_square = self.decide_next_square(field)
 
@@ -56,15 +57,79 @@ class DecisionMaker:
         Function for checking whether safe spots exist on the field.
         """
 
-        return len(self._safe_squares) > 0
+        return not self._safe_squares.empty()
 
-    def update_field(self):
+    def update_field(self, field):
         """
         Function for updating all information regarding the game's field like 
         safe spots or values.
         """
 
-        pass
+        # Each square is being wrapped in order to allow callbacks when 
+        # changing the total influence amount.
+        wrapped_squares = {}
+        for row_index in range(0, len(field)):
+            for column_index in range(0, len(field[row_index])):
+                square = field[row_index][column_index]
+                affected_squares = []
+
+                # All affected indices must be calculated.
+                left_x = column_index - 1
+                center_x = column_index
+                right_x = column_index + 1
+                top_y = row_index - 1
+                center_y = row_index
+                bottom_y = row_index + 1
+
+                # Checks are needed since Python does not throw exceptions when 
+                # accessing indices like -1 etc. but instead reads elements from 
+                # the end of the list.
+                # Left side of the target.
+                if left_x >= 0:
+                    if top_y >= 0:
+                        affected_squares.append((top_y, left_x))
+                    if center_y >= 0:
+                        affected_squares.append((center_y, left_x))
+                    if bottom_y < len(field):
+                        affected_squares.append((bottom_y, left_x))
+                # Top and bottom of the target.
+                if center_x >= 0:
+                    if top_y >= 0:
+                        affected_squares.append((top_y, center_x))
+                    if bottom_y < len(field):
+                        affected_squares.append((bottom_y, center_x))
+                # Right side of the target.
+                if right_x < len(field[0]):
+                    if top_y >= 0:
+                        affected_squares.append((top_y, right_x))
+                    if center_y >= 0:
+                        affected_squares.append((center_y, right_x))
+                    if bottom_y < len(field):
+                        affected_squares.append((bottom_y, right_x))
+
+                # First only create the instances.
+                coordinates = row_index, column_index
+                wrapper = SquareWrapper(square, affected_squares, coordinates)
+                wrapped_squares[coordinates] = wrapper
+
+        # Map each created instance to its neighbours such that all
+        # neighbours can be directly accessed.
+        for wrapper in wrapped_squares.values():
+            wrapper.map_wrappers(wrapped_squares)
+
+        # Update the values based on known bomb locations.
+        for wrapper in wrapped_squares.values():
+            wrapper.update_effective_value()
+
+        # Collect all safe squares.
+        safe_squares = set()
+        for wrapper in wrapped_squares.values():
+            for safe_square in wrapper.adjacent_safe_squares:
+                safe_squares.add(safe_square)
+
+        # Update all scores.
+        for wrapper in wrapped_squares.values():
+            wrapper.update_score()
 
     def pick_random_square(self, field):
         """
