@@ -190,7 +190,7 @@ class OpenCV:
         from a provided image.
         """
         
-        l.debug("Extracting fielf information...")
+        l.debug("Extracting field information...")
 
         # The coordinates need to be set once in order for the checked 
         # template matching to properly work.
