@@ -25,9 +25,6 @@
     <Compile Include="DecisionMaker.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="FieldState.py">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Include="Game.py">
       <SubType>Code</SubType>
     </Compile>
