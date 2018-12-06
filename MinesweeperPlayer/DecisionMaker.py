@@ -14,6 +14,9 @@ class DecisionMaker:
     _is_beginning_of_game = True
     _is_field_updated = False
     _safe_squares = Queue()
+    _best_valued_square_wrapper = None
+    # HashSet of returned decisions such that squares are not chosen twice.
+    _returned_decisions = set()
 
     def __init__(self):
         self.reset()
@@ -39,7 +42,8 @@ class DecisionMaker:
             self._is_field_updated = True
             next_square = self.decide_next_square(field)
 
-        l.debug("Chose: {}".format(next_square.center_coordinates))
+        # Improve the results by keeping track of already chosen squares.
+        self._returned_decisions.add(next_square)
 
         return next_square
 
@@ -51,6 +55,8 @@ class DecisionMaker:
         self._is_beginning_of_game = True
         self._safe_squares = Queue()
         self._is_field_updated = False
+        self._best_valued_square = None
+        self._returned_decisions = set()
 
     def do_safe_squares_exist(self):
         """
@@ -131,6 +137,18 @@ class DecisionMaker:
         for wrapper in wrapped_squares.values():
             wrapper.update_score()
 
+        # Move all wrappers to the collection of clickable ones.
+        for wrapper in safe_squares:
+            if not(wrapper.square in self._returned_decisions):
+                self._safe_squares.put(wrapper)
+
+        # Find the best valued square for clicking.
+        best_valued_wrapper = None
+        for wrapper in wrapped_squares.values(): 
+            if best_valued_wrapper is None or wrapper.score > best_valued_wrapper.score:
+                best_valued_wrapper = wrapper
+        self._best_valued_square_wrapper = best_valued_wrapper
+
     def pick_random_square(self, field):
         """
         Function for picking a random square. Mostly used in at the beginning 
@@ -141,6 +159,9 @@ class DecisionMaker:
 
         row = random.randint(0, len(field) - 1)
         column = random.randint(0, len(field[row]) - 1)
+
+        l.debug("Chose: ({},{})".format(row, column))
+
         return field[row][column]
 
     def pick_safe_square(self):
@@ -151,7 +172,11 @@ class DecisionMaker:
 
         l.debug("Choosing safe square.")
 
-        return self._safe_squares.get()
+        wrapper = self._safe_squares.get()
+        
+        l.debug("Chose: {}".format(wrapper.coordinates))
+
+        return wrapper.square
 
     def pick_best_valued_square(self, field):
         """
@@ -159,5 +184,6 @@ class DecisionMaker:
         """
 
         l.debug("Choosing best valued square.")
+        l.debug("Chose: {}".format(self._best_valued_square_wrapper.coordinates))
 
-        pass
+        return self._best_valued_square_wrapper.square

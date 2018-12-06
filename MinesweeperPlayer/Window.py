@@ -1,6 +1,6 @@
 import win32gui, win32api, win32con
 import pyscreenshot as ImageGrab
-import time
+import time as t
 
 class Window:
     """
@@ -10,7 +10,7 @@ class Window:
     """
 
     _window_name = "Minesweeper"
-    _hwdn = None
+    _hwnd = None
 
     def __init__(self):
         if self.is_open():
@@ -76,15 +76,23 @@ class Window:
 
         self.focus_window()
         # Time needed for the window to appear on top.
-        time.sleep(.1)
+        t.sleep(0.001)
     
         image = ImageGrab.grab(bbox=(bounds))
         return image
 
-    def move_mouse(self, pos):
+    def move_mouse(self, pos, is_relative = True, x_offset = -8, y_offset = -48):
         """
         Function for moving the mouse on the screen.
         """
+
+        if is_relative:
+            # Magic numbers include the offset created by taking an image of 
+            # the whole application window, which also includes the upper 
+            # menu bar. The windows client to screen function on the other 
+            # hand does not take these in consideration, which is why a 
+            # manual offset must be applied here.
+            pos = win32gui.ClientToScreen(self._hwnd, (pos[0] + x_offset, pos[1] + y_offset))
 
         win32api.SetCursorPos(pos)
 
