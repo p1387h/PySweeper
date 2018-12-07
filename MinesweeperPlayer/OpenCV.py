@@ -52,18 +52,18 @@ class OpenCV:
     # Thresholds for the different kinds of template matchings that 
     # are performed by this class.
     _thresholds = {
-        _unchecked_keys[0]: 0.725,
-        _unchecked_keys[1]: 0.725,
-        _unchecked_keys[2]: 0.725,
-        _checked_keys[0]: 0.85,
-        _checked_keys[1]: 0.68,
-        _checked_keys[2]: 0.6,
+        _unchecked_keys[0]: 0.735,
+        _unchecked_keys[1]: 0.735,
+        _unchecked_keys[2]: 0.735,
+        _checked_keys[0]: 0.875,
+        _checked_keys[1]: 0.63,
+        _checked_keys[2]: 0.55,
         _checked_keys[3]: 0.69,
         _checked_keys[4]: 0.69,
-        _checked_keys[5]: 0.69,
+        _checked_keys[5]: 0.6,
         _checked_keys[6]: 0.69,
         _checked_keys[7]: 0.69,
-        _checked_keys[8]: 0.69,
+        _checked_keys[8]: 0.75,
     }
 
     # Mapped values for the different squares.
@@ -353,7 +353,7 @@ class OpenCV:
         """
 
         result_empty = self.extract(image, _checked_keys[:1])
-        result_numbers = self.extract(image, _checked_keys[1:], use_canny = True, use_cropped_image = True)
+        result_numbers = self.extract(image, _checked_keys[1:], use_canny = True, canny_params = (275, 320), use_cropped_image = True)
 
         # Adjust the points since a cropped image is used. The coordinates 
         # received previously do not match the uncropped image.

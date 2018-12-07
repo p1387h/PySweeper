@@ -28,6 +28,7 @@ class GameManager:
         t.sleep(0.25)
 
         l.info("Starting the GameManager...")
+        input("Press any key to start.")
 
         while not self._game.is_finished:
             if self._window.is_open():
@@ -42,14 +43,14 @@ class GameManager:
                     while self._decision_maker.do_safe_squares_exist():
                         t.sleep(0.025)
                         next_square = self._decision_maker.decide_next_square(field)
-                        self._window.click_mouse(next_square.center_coordinates)
+                        #self._window.click_mouse(next_square.center_coordinates)
                 else:
                     # Update the current state of the game.
                     self._game.update(self._window)
                     field = self._game.current_field_info
 
                     next_square = self._decision_maker.decide_next_square(field)
-                    self._window.click_mouse(next_square.center_coordinates)
+                    #self._window.click_mouse(next_square.center_coordinates)
             else:
                 l.critical("The Minesweeper window must be opened in order for this program to work.")
 

@@ -30,7 +30,9 @@ class Game:
             self._open_cv = OpenCV()
 
         # Update the field information using OpenCV.
+        l.debug("Getting window image...")
         image = window.get_window_image()
+        l.debug("Getting field information...")
         new_field_info = self._open_cv.get_field_information(image)
         self._current_state = self.compare_and_update_field_info(new_field_info)
 
