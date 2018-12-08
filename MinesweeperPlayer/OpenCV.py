@@ -12,7 +12,7 @@ _unchecked_keys = [
     "udark", "umedium", "ulight"
 ]
 _checked_keys = [
-    "c0", "c1", "c2", "c3", "c4", "c5", "c6", "c7", "c8"
+    "c1", "c2", "c3", "c4", "c5", "c6", "c7", "c8"
 ]
 
 class OpenCV:
@@ -34,15 +34,14 @@ class OpenCV:
         _unchecked_keys[0]: "resources/squares_unchecked/square_dark.png",
         _unchecked_keys[1]: "resources/squares_unchecked/square_medium.png",
         _unchecked_keys[2]: "resources/squares_unchecked/square_light.png",
-        _checked_keys[0]: "resources/squares_checked/square_empty.png",
-        _checked_keys[1]: "resources/squares_checked/square_1.png",
-        _checked_keys[2]: "resources/squares_checked/square_2.png",
-        _checked_keys[3]: "resources/squares_checked/square_3.png",
-        _checked_keys[4]: "resources/squares_checked/square_4.png",
-        _checked_keys[5]: "resources/squares_checked/square_5.png",
-        _checked_keys[6]: "resources/squares_checked/square_6.png",
-        _checked_keys[7]: "resources/squares_checked/square_7.png",
-        _checked_keys[8]: "resources/squares_checked/square_8.png",
+        _checked_keys[0]: "resources/squares_checked/square_1.png",
+        _checked_keys[1]: "resources/squares_checked/square_2.png",
+        _checked_keys[2]: "resources/squares_checked/square_3.png",
+        _checked_keys[3]: "resources/squares_checked/square_4.png",
+        _checked_keys[4]: "resources/squares_checked/square_5.png",
+        _checked_keys[5]: "resources/squares_checked/square_6.png",
+        _checked_keys[6]: "resources/squares_checked/square_7.png",
+        _checked_keys[7]: "resources/squares_checked/square_8.png",
     }
     _used_unchecked_template_key = _unchecked_keys[0]
 
@@ -55,28 +54,26 @@ class OpenCV:
         _unchecked_keys[0]: 0.735,
         _unchecked_keys[1]: 0.735,
         _unchecked_keys[2]: 0.735,
-        _checked_keys[0]: 0.875,
-        _checked_keys[1]: 0.63,
-        _checked_keys[2]: 0.55,
+        _checked_keys[0]: 0.63,
+        _checked_keys[1]: 0.55,
+        _checked_keys[2]: 0.69,
         _checked_keys[3]: 0.69,
-        _checked_keys[4]: 0.69,
-        _checked_keys[5]: 0.6,
+        _checked_keys[4]: 0.6,
+        _checked_keys[5]: 0.69,
         _checked_keys[6]: 0.69,
-        _checked_keys[7]: 0.69,
-        _checked_keys[8]: 0.75,
+        _checked_keys[7]: 0.75,
     }
 
     # Mapped values for the different squares.
     _mapped_values = {
-        _checked_keys[0]: 0,
-        _checked_keys[1]: 1,
-        _checked_keys[2]: 2,
-        _checked_keys[3]: 3,
-        _checked_keys[4]: 4,
-        _checked_keys[5]: 5,
-        _checked_keys[6]: 6,
-        _checked_keys[7]: 7,
-        _checked_keys[8]: 8,
+        _checked_keys[0]: 1,
+        _checked_keys[1]: 2,
+        _checked_keys[2]: 3,
+        _checked_keys[3]: 4,
+        _checked_keys[4]: 5,
+        _checked_keys[5]: 6,
+        _checked_keys[6]: 7,
+        _checked_keys[7]: 8,
     }
 
     # Coordinates / dimensions of the game field that can be used for 
@@ -225,7 +222,7 @@ class OpenCV:
             line = ""
             for column in row:
                 if column.is_unchecked:
-                    line += " "
+                    line += "?"
                 else:
                     line += str(column.value)
             l.debug(line)
@@ -352,7 +349,6 @@ class OpenCV:
         as well as the scling ratio for them.
         """
 
-        result_empty = self.extract(image, _checked_keys[:1])
         result_numbers = self.extract(image, _checked_keys[1:], use_canny = True, canny_params = (275, 320), use_cropped_image = True)
 
         # Adjust the points since a cropped image is used. The coordinates 
@@ -362,7 +358,7 @@ class OpenCV:
         mapping_function = lambda item: (item[0], (item[1][0], self.adjust_cropped_points(item[1][1]), item[1][2]))
         adjusted_result_numbers = list(map(mapping_function, result_numbers.items()))
 
-        result = {**result_empty, **dict(adjusted_result_numbers)}
+        result = dict(adjusted_result_numbers)
         return result
 
     def extract(self, image, keys, adjust_points_to_match_image = True, use_canny = False, canny_params = (50, 200), use_cropped_image = False):
