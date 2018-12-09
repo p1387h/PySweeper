@@ -144,9 +144,11 @@ class DecisionMaker:
 
         # Find the best valued square for clicking.
         best_valued_wrapper = None
-        for wrapper in wrapped_squares.values(): 
-            if best_valued_wrapper is None or wrapper.score > best_valued_wrapper.score:
-                best_valued_wrapper = wrapper
+        for wrapper in wrapped_squares.values():
+            # Only unchecked ones that are no bombs.
+            if wrapper.square.is_unchecked and not wrapper.has_reduced_neighbours:
+                if best_valued_wrapper is None or wrapper.score < best_valued_wrapper.score:
+                    best_valued_wrapper = wrapper
         self._best_valued_square_wrapper = best_valued_wrapper
 
     def pick_random_square(self, field):
