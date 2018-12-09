@@ -35,25 +35,31 @@ class GameManager:
 
         while not self._game.is_finished:
             if self._window.is_open():
-                # TODO: Remove
-                #input("Waiting for input...")
-
-                t.sleep(0.025)
-                self.move_mouse_away()
-
                 if self._decision_maker.do_safe_squares_exist():
                     # Perform all actions that are safe.
                     while self._decision_maker.do_safe_squares_exist():
-                        t.sleep(0.025)
                         next_square = self._decision_maker.decide_next_square(field)
                         self._window.click_mouse(next_square.center_coordinates)
+
+                        t.sleep(0.025)
                 else:
+                    self.move_mouse_away()
+
+                    # Wait time for the game to update its view. Differs for different sizes.
+                    # I.e.:
+                    # Small     0.05
+                    # Medium    0.075
+                    # Large     0.11
+                    t.sleep(0.11)
+
                     # Update the current state of the game.
                     self._game.update(self._window)
                     field = self._game.current_field_info
 
                     next_square = self._decision_maker.decide_next_square(field)
                     self._window.click_mouse(next_square.center_coordinates)
+
+                    t.sleep(0.025)
             else:
                 l.critical("The Minesweeper window must be opened in order for this program to work.")
 
