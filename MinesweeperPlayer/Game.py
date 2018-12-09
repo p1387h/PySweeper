@@ -75,20 +75,20 @@ class Game:
                 checked_stored = Square(stored.center_coordinates, 0, False)
                 
                 # Empty fields at the ends must be added manually.
-                if column_index >= len(new_field_info[row_index]):
-                    new_field_info[row_index].append(checked_stored)
+                if column_index >= len(field_info[row_index]):
+                    field_info[row_index].append(checked_stored)
                 else:
-                    new = new_field_info[row_index][column_index]
+                    new = field_info[row_index][column_index]
                     difference_x = abs(new.center_coordinates[0] - stored.center_coordinates[0])
 
                     # Distance greater than the previously calculated distance means 
                     # that an entry is missing here.
                     if difference_x >= self._initial_square_width:
-                        new_field_info[row_index].insert(column_index, checked_stored)
+                        field_info[row_index].insert(column_index, checked_stored)
 
         # Crude display of the result.
-        l.debug("Filling results: {} rows with {} columns".format(len(new_field_info), list(map(lambda x: len(x), new_field_info))))
-        for row in new_field_info:
+        l.debug("Filling results: {} rows with {} columns".format(len(field_info), list(map(lambda x: len(x), field_info))))
+        for row in field_info:
             line = ""
             for column in row:
                 if column.is_unchecked:
