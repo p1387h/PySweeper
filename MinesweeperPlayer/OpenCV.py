@@ -349,7 +349,7 @@ class OpenCV:
         as well as the scling ratio for them.
         """
 
-        result_numbers = self.extract(image, _checked_keys[1:], use_canny = True, canny_params = (275, 320), use_cropped_image = True)
+        result_numbers = self.extract(image, _checked_keys, use_canny = True, canny_params = (275, 320), use_cropped_image = True)
 
         # Adjust the points since a cropped image is used. The coordinates 
         # received previously do not match the uncropped image.
