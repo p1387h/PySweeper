@@ -1,6 +1,8 @@
+from PIL import ImageGrab
+
 import win32gui, win32api, win32con
-import pyscreenshot as ImageGrab
 import time as t
+
 
 class Window:
     """
