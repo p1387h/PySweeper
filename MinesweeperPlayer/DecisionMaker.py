@@ -134,8 +134,10 @@ class DecisionMaker:
                 safe_squares.add(safe_square)
 
         # Update all scores.
-        for wrapper in wrapped_squares.values():
-            wrapper.update_score()
+        max_row_index = max(map(lambda tuple: tuple[1], wrapped_squares.keys()))
+        max_column_index = max(map(lambda tuple: tuple[0], wrapped_squares.keys()))
+        for indices, wrapper in wrapped_squares.items():
+            wrapper.update_score(indices, (max_row_index, max_column_index))
 
         # Move all wrappers to the collection of clickable ones.
         for wrapper in safe_squares:

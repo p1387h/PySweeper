@@ -21,6 +21,8 @@ class SquareWrapper:
     # Lower score == better since it resembles the possibility of a bomb
     # being chosen. Is between 0 and 8.
     score = 0
+    # The score with which each unchecked score affects its neighbours.
+    _unchecked_score_effect = 1
 
     # The squares that are affected by this one. This includes all 
     # squares (X) around this one (O). I.e.:
@@ -44,7 +46,7 @@ class SquareWrapper:
         # all instances.
         self._affected_square_wrappers = {}
         self.adjacent_bombs = []
-        adjacent_safe_squares = []
+        self.adjacent_safe_squares = []
 
     def map_wrappers(self, wrappers):
         """
@@ -103,25 +105,32 @@ class SquareWrapper:
 
     def reduce_effective_value(self, bomb_square_wrapper):
         """
-        Function for reducing the effective value of this square by one. Must 
+        Function for reducing the effective value of this square. Must 
         be called when an adjacent square is considered to be a bomb.
         """
 
         self.adjacent_bombs.append(bomb_square_wrapper)
 
         if not self.effective_value is None:
-            self.effective_value -= 1
+            self.effective_value -= self._unchecked_score_effect
 
             # All remaining squares are safe.
             if self.effective_value == 0:
                 for safe_square in filter(lambda wrapper: not(wrapper in self.adjacent_bombs) and wrapper.square.is_unchecked, self._affected_square_wrappers.values()):
                     self.adjacent_safe_squares.append(safe_square)
 
-    def update_score(self):
+    def update_score(self, indices, max_indices):
         """
-        Function for updating the score emitted by this square. For a complete 
-        score all squares must be updated accordingly since each one of them 
-        affects its neighbours.
+        Function for updating the score of this square as well as the scores 
+        around this one.
+        """
+
+        self.update_own_score(*indices, *max_indices)
+        self.update_neighbour_scores()
+
+    def update_neighbour_scores(self):
+        """
+        Function for updating the scores of neighbours.
         """
 
         neighbours = self.extract_unchecked_neighbours()
@@ -129,7 +138,7 @@ class SquareWrapper:
 
         # Unchecked squares.
         if self.effective_value is None:
-            score_for_each = 1
+            score_for_each = self._unchecked_score_effect
         # Checked squares without value.
         elif self.effective_value == 0:
             score_for_each = 0
@@ -138,3 +147,37 @@ class SquareWrapper:
 
         for wrapper in neighbours:
             wrapper.score += score_for_each
+
+    def update_own_score(self, row_index, column_index, max_row_index, max_column_index):
+        """
+        Function for updating the score of this square based on its location.
+        Squares on the edge must be given extra points since they cant be updated 
+        by the non existent squares outside the game field. I.e.:
+        O = outside
+        X = inside the game field
+        T = target field
+
+        O O O
+        O T X
+        O X X
+
+        Due to all squares updating their neighbours, the target square (T) would 
+        not receive scores from five sources (O).
+        """
+
+        extra_score_multiplier = 0
+
+        # Left / Right
+        if column_index == 0 or column_index == max_column_index:
+            extra_score_multiplier += 3
+
+            # Left-Top / Left-Bottom / Right-Top / Right-Bottom
+            if row_index == 0 or row_index == max_row_index:
+                extra_score_multiplier += 2
+        # Top / Bottom
+        elif row_index == 0 or row_index == max_row_index:
+            extra_score_multiplier += 3
+
+        # Apply the effect of outside fields to the square's score.
+        extra_score = self._unchecked_score_effect * extra_score_multiplier
+        self.score += extra_score
