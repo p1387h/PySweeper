@@ -1,0 +1,15 @@
+cycler==0.10.0
+EasyProcess==0.2.3
+imutils==0.5.1
+kiwisolver==1.0.1
+matplotlib==3.0.2
+numpy==1.15.4
+opencv-python==3.4.3.18
+Pillow==5.3.0
+pip==10.0.1
+pyparsing==2.3.0
+python-dateutil==2.7.5
+pytz==2018.7
+pywin32==224
+setuptools==39.0.1
+six==1.11.0
