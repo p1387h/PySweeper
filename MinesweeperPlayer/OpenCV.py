@@ -14,6 +14,9 @@ _unchecked_keys = [
 _checked_keys = [
     "c1", "c2", "c3", "c4", "c5", "c6", "c7", "c8"
 ]
+_utility_keys = [
+    "finished"
+]
 
 class OpenCV:
     """
@@ -42,6 +45,7 @@ class OpenCV:
         _checked_keys[5]: "resources/squares_checked/square_6.png",
         _checked_keys[6]: "resources/squares_checked/square_7.png",
         _checked_keys[7]: "resources/squares_checked/square_8.png",
+        _utility_keys[0]: "resources/utilities/finished.png"
     }
     _used_unchecked_template_key = _unchecked_keys[0]
 
@@ -62,6 +66,7 @@ class OpenCV:
         _checked_keys[5]: 0.69,
         _checked_keys[6]: 0.69,
         _checked_keys[7]: 0.75,
+        _utility_keys[0]: 0.69
     }
 
     # Mapped values for the different squares.
@@ -179,7 +184,24 @@ class OpenCV:
         return (open_cv_image, gray_image)
 
     def is_finished(self, image):
-        pass
+        """
+        Function for checking if the game is finished (= won or lost). This function 
+        only takes the end screen into consideration and does NOT match bombs etc.
+        """
+
+        l.debug("Checking if game is finished...")
+
+        open_cv_image, gray_image = self.prepare_image(image, use_canny = True)
+        template = self._templates[_utility_keys[0]]
+        template = cv2.Canny(template, 100, 150)
+
+        # Template matching
+        result = cv2.matchTemplate(gray_image, template, cv2.TM_CCOEFF_NORMED)
+        locations = np.where(result >= self._thresholds[_utility_keys[0]])
+        points = list(zip(*locations[::-1]))
+
+        # Any locations indicate that the end screen is being shown.
+        return len(points) > 0
 
     def get_field_information(self, image):
         """

@@ -59,10 +59,12 @@ class Game:
         l.debug("Getting window image...")
         image = window.get_window_image()
         l.debug("Getting field information...")
-        new_field_info = self._open_cv.get_field_information(image)
+        self.is_finished = self._open_cv.is_finished(image)
 
-        self.fill_empty_spaces(new_field_info)
-        self.compare_and_update_field_info(new_field_info)
+        if not self.is_finished:
+            new_field_info = self._open_cv.get_field_information(image)
+            self.fill_empty_spaces(new_field_info)
+            self.compare_and_update_field_info(new_field_info)
 
     def fill_empty_spaces(self, field_info):
         l.debug("Filling empty spaces with zeroes...")
