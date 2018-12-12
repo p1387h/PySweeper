@@ -32,5 +32,7 @@ The main components of the application are the following classes:
 ### Decision making
 The application uses a score system for deciding which square is going to be clicked next. Each one of them gets assigned a value matching their number in the game. If this values exactly matches the number of unchecked squares around a target one, these unchecked squares decrease the value of each square around them. This must be done since these ones are definitely bombs. Once a squares value is decreased to zero, all other neighbours, that are not considered bombs, are recognized as safe and can be clicked one after another.
 
+![](decision_making.png)
+
 ## License
 MIT [license](https://github.com/p1387h/PySweeper/blob/master/LICENSE.txt)
