@@ -8,7 +8,9 @@ Creator: P H, ph1387@t-online.de
 This application can solve the different game field sizes quite reliably. But at some times guessing a safe spot is necessary and can not be avoided due to the nature of the game. After using OpenCV template matching for the first time I would say that directly reading the Process' memory or using another form of image regognition would have been easier and far less error prone since the size of the game must match the templates. Scaling either the image or the templates is an option but causes massive matching errors.
 The needed Python-Modules are located in the requirements.txt inside the project.
 
-![](play_large.gif)
+<p align="center">
+  <img width="600" height="370" src="https://github.com/p1387h/PySweeper/blob/master/play_large.gif">
+</p>
 
 ### Idea
 The general idea of the application can be split in four steps:
