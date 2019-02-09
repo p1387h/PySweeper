@@ -59,7 +59,7 @@ class GameManager:
                         self._game.update(self._window)
                         field = self._game.current_field_info
 
-                        # Flag is updated after calling the update function. Therefor a check is necessary.
+                        # Flag is updated after calling the update function. Therefore a check is necessary.
                         if not self._game.is_finished:
                             next_square = self._decision_maker.decide_next_square(field)
                             self._window.click_mouse(next_square.center_coordinates)
