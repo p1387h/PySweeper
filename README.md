@@ -12,7 +12,55 @@ The needed Python-Modules are located in the requirements.txt inside the project
   <img width="600" height="370" src="https://github.com/p1387h/PySweeper/blob/master/play_large.gif">
 </p>
 
-### Idea
+## Instructions
+
+### How to run
+
+The instructions are written for a usage on a Windows machine. If you're using Linux or IOS, then these might differ slightly.
+Navigate into the project folder where the requirements.txt is located:
+```sh
+cd PySweeper\MinesweeperPlayer
+```
+
+**Optional but recommended if not used skip to the end of the optional block**
+install virtualenv, create a virtual environment for the project called "pySweeper" and activate it.
+
+```sh
+python -m pip install --user virtualenv
+python -m virtualenv pySweeper
+pySweeper\Scripts\activate
+```
+
+A successful activation shows the folder name in front of the command line. I.e.:
+
+``` sh
+(pySweeper) C:\Users\X\Desktop\PySweeper\MinesweeperPlayer
+```
+
+**End of the optional block**
+Install all requirements for the project using pip:
+
+```sh
+pip install -r .\requirements.txt
+```
+
+Now start the Minesweeper game. Make sure to use the default (smallest) size since this project relies on image recognition.
+Run the project with the following command. After that two windows will open and the console waits until a button is pressed.
+
+```sh
+python Main.py
+```
+
+**Not needed if no environment was created**
+Deactivate the environment with the following command. You can enable it again later if needed.
+
+```sh
+pySweeper\Scripts\deactivate.bat
+```
+
+### How it works
+
+#### Idea
 The general idea of the application can be split in four steps:
 
 - Get an image of the game
@@ -31,7 +79,7 @@ The main components of the application are the following classes:
 |DecisionMaker|Decides the positions that are going to be clicked next|
 |SquareWrapper|Wrapper for the Square class. Generates the scores used in the DecisionMaker|
 
-### Decision making
+#### Decision making
 The application uses a score system for deciding which square is going to be clicked next. Each one of them gets assigned a value matching their number in the game. If this values exactly matches the number of unchecked squares around a target one, these unchecked squares decrease the value of each square around them. This must be done since these ones are definitely bombs. Once a squares value is decreased to zero, all other neighbours, that are not considered bombs, are recognized as safe and can be clicked one after another.
 
 <p align="center">
