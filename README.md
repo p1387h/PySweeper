@@ -23,6 +23,7 @@ cd PySweeper\MinesweeperPlayer
 ```
 
 **Optional but recommended if not used skip to the end of the optional block**
+
 install virtualenv, create a virtual environment for the project called "pySweeper" and activate it.
 
 ```sh
@@ -38,6 +39,7 @@ A successful activation shows the folder name in front of the command line. I.e.
 ```
 
 **End of the optional block**
+
 Install all requirements for the project using pip:
 
 ```sh
@@ -52,6 +54,7 @@ python Main.py
 ```
 
 **Not needed if no environment was created**
+
 Deactivate the environment with the following command. You can enable it again later if needed.
 
 ```sh
