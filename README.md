@@ -47,7 +47,7 @@ pip install -r .\requirements.txt
 ```
 
 Now start the Minesweeper game. Make sure to use the default (smallest) size since this project relies on image recognition.
-Run the project with the following command. After that two windows will open and the console waits until a button is pressed.
+Move into the folder containing the main python file and run the project with the following command. After that two windows will open and the console waits until a button is pressed.
 
 ```sh
 python Main.py
