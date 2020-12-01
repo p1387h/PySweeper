@@ -90,4 +90,4 @@ The application uses a score system for deciding which square is going to be cli
 </p>
 
 ## License
-MIT [license](https://github.com/p1387h/PySweeper/blob/master/LICENSE.txt)
+MIT [license](https://github.com/ph1387/PySweeper/blob/master/LICENSE.txt)
